@@ -3,6 +3,8 @@ import { api } from './lib/api.js';
 import PlaidConnect from './components/PlaidConnect.jsx';
 import AccountList from './components/AccountList.jsx';
 import Insights from './components/Insights.jsx';
+import ShareButton from './components/ShareButton.jsx';
+import InstallPrompt from './components/InstallPrompt.jsx';
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -56,9 +58,14 @@ export default function App() {
   return (
     <div className="app">
       <div className="brand">
-        <div className="brand-mark" />
-        <div className="brand-name">Swipewise</div>
+        <div className="brand-left">
+          <div className="brand-mark" />
+          <div className="brand-name">Swipewise</div>
+        </div>
+        <ShareButton />
       </div>
+
+      <InstallPrompt />
 
       {!hasAccounts && (
         <div className="hero">
@@ -69,18 +76,14 @@ export default function App() {
 
       {error && <div className="error">{error}</div>}
 
-      <div className="card">
-        <h2>{hasAccounts ? 'Add another bank' : 'Get started'}</h2>
-        <PlaidConnect onConnected={refresh} />
-        {hasAccounts && (
-          <>
-            <div style={{ height: 8 }} />
-            <button className="btn secondary" onClick={manualSync} disabled={syncing}>
-              {syncing ? 'Syncing…' : 'Sync transactions'}
-            </button>
-          </>
-        )}
-      </div>
+      {!hasAccounts && (
+        <div className="card">
+          <h2>Get started</h2>
+          <PlaidConnect onConnected={refresh} />
+        </div>
+      )}
+
+      {hasAccounts && <Insights data={insights} />}
 
       {hasAccounts && (
         <div className="card">
@@ -89,7 +92,16 @@ export default function App() {
         </div>
       )}
 
-      {hasAccounts && <Insights data={insights} />}
+      {hasAccounts && (
+        <div className="card">
+          <h2>Add another bank</h2>
+          <PlaidConnect onConnected={refresh} />
+          <div style={{ height: 8 }} />
+          <button className="btn secondary" onClick={manualSync} disabled={syncing}>
+            {syncing ? 'Syncing…' : 'Sync transactions'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

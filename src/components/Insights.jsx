@@ -44,7 +44,7 @@ export default function Insights({ data }) {
               <div className="cat" key={c}>
                 <div className="label">{CATEGORY_LABELS[c]}</div>
                 <div className="value">{b ? b.card_name : '—'}</div>
-                {b && <div className="rate">{b.rate}× / %</div>}
+                {b && <div className="rate">{b.rate}% back</div>}
               </div>
             );
           })}
@@ -62,9 +62,9 @@ export default function Insights({ data }) {
             <div className="amount">${t.amount.toFixed(2)}</div>
             <div className="meta">
               <span className="pill">{CATEGORY_LABELS[t.category] || t.category}</span>{' '}
-              {t.used_card ? `Used: ${t.used_card.name} (${t.used_card.rate}×)` : 'Card unknown'}
-              {t.best_card && t.used_card && t.best_card.id !== t.used_card.id && (
-                <> · Better: <span className="missed">{t.best_card.name} ({t.best_card.rate}×)</span> · +${t.missed_rewards.toFixed(2)}</>
+              {t.used_card ? `${t.used_card.rate}% on ${t.used_card.name}` : 'Card unknown'}
+              {t.best_card && t.used_card && t.best_card.id !== t.used_card.id && t.missed_rewards > 0 && (
+                <> · <span className="missed">+${t.missed_rewards.toFixed(2)} on {t.best_card.name}</span></>
               )}
             </div>
           </div>
