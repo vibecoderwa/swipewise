@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../lib/api.js';
+import CardArt from './CardArt.jsx';
 
 export default function AccountList({ accounts, cards, onChange }) {
   const [busy, setBusy] = useState(null);
@@ -20,10 +21,13 @@ export default function AccountList({ accounts, cards, onChange }) {
 
   return accounts.map(a => (
     <div className="account" key={a.id}>
-      <div>
-        <div className="name">{a.institution_name || 'Bank'} · {a.name}</div>
-        <div className="meta">
-          {a.subtype || a.type}{a.mask ? ` ••${a.mask}` : ''}
+      <div className="account-left">
+        {a.matched_card && <CardArt card={a.matched_card} size="sm" />}
+        <div>
+          <div className="name">{a.institution_name || 'Bank'} · {a.name}</div>
+          <div className="meta">
+            {a.subtype || a.type}{a.mask ? ` ••${a.mask}` : ''}
+          </div>
         </div>
       </div>
       <select

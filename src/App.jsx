@@ -92,7 +92,7 @@ export default function App() {
 
       {hasAccounts && <Insights data={insights} />}
 
-      {hasAccounts && <Recommendations data={recommendations} />}
+      {hasAccounts && <Recommendations data={recommendations} allCards={cards} />}
 
       {hasAccounts && (
         <div className="card">

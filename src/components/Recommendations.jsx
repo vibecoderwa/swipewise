@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import CardArt from './CardArt.jsx';
 
-export default function Recommendations({ data }) {
+export default function Recommendations({ data, allCards = [] }) {
+  const cardById = Object.fromEntries(allCards.map(c => [c.id, c]));
   const [expanded, setExpanded] = useState(null);
   if (!data) return null;
 
@@ -39,7 +41,7 @@ export default function Recommendations({ data }) {
       {data.recommendations.map((r, i) => (
         <div className="rec" key={r.card_id}>
           <div className="rec-row">
-            <div className="rec-rank">#{i + 1}</div>
+            <CardArt card={cardById[r.card_id] || { id: r.card_id, name: r.card_name, issuer: r.issuer }} size="md" />
             <div className="rec-main">
               <div className="rec-name">{r.card_name}</div>
               <div className="rec-headline muted small">{r.headline}</div>
