@@ -5,6 +5,7 @@ import AccountList from './components/AccountList.jsx';
 import Insights from './components/Insights.jsx';
 import ShareButton from './components/ShareButton.jsx';
 import InstallPrompt from './components/InstallPrompt.jsx';
+import Recommendations from './components/Recommendations.jsx';
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -12,13 +13,19 @@ export default function App() {
   const [cards, setCards] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [insights, setInsights] = useState(null);
+  const [recommendations, setRecommendations] = useState(null);
   const [syncing, setSyncing] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
-      const [a, i] = await Promise.all([api.accounts(), api.insights()]);
+      const [a, i, r] = await Promise.all([
+        api.accounts(),
+        api.insights(),
+        api.recommendations(),
+      ]);
       setAccounts(a.accounts);
       setInsights(i);
+      setRecommendations(r);
     } catch (e) {
       setError(e.message);
     }
@@ -84,6 +91,8 @@ export default function App() {
       )}
 
       {hasAccounts && <Insights data={insights} />}
+
+      {hasAccounts && <Recommendations data={recommendations} />}
 
       {hasAccounts && (
         <div className="card">

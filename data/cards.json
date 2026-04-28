@@ -4,6 +4,7 @@
     "name": "Chase Sapphire Preferred",
     "issuer": "Chase",
     "network": "Visa",
+    "annual_fee": 95,
     "match_keywords": ["sapphire preferred", "sapphire pref"],
     "rewards": {
       "dining": 3, "streaming": 3, "groceries": 3, "travel": 2,
@@ -15,6 +16,7 @@
     "name": "Chase Sapphire Reserve",
     "issuer": "Chase",
     "network": "Visa",
+    "annual_fee": 550,
     "match_keywords": ["sapphire reserve", "csr"],
     "rewards": {
       "dining": 3, "travel": 3, "streaming": 1, "groceries": 1,
@@ -26,6 +28,7 @@
     "name": "Chase Freedom Unlimited",
     "issuer": "Chase",
     "network": "Visa",
+    "annual_fee": 0,
     "match_keywords": ["freedom unlimited", "cfu"],
     "rewards": {
       "dining": 3, "travel": 5, "streaming": 1.5, "groceries": 1.5,
@@ -37,6 +40,7 @@
     "name": "Chase Freedom Flex",
     "issuer": "Chase",
     "network": "Mastercard",
+    "annual_fee": 0,
     "match_keywords": ["freedom flex", "freedom"],
     "rewards": {
       "dining": 3, "travel": 5, "streaming": 1, "groceries": 1,
@@ -48,6 +52,7 @@
     "name": "Amex Gold",
     "issuer": "American Express",
     "network": "Amex",
+    "annual_fee": 325,
     "match_keywords": ["gold card", "amex gold"],
     "rewards": {
       "dining": 4, "groceries": 4, "travel": 3, "streaming": 1,
@@ -59,6 +64,7 @@
     "name": "Amex Platinum",
     "issuer": "American Express",
     "network": "Amex",
+    "annual_fee": 695,
     "match_keywords": ["platinum card", "amex platinum"],
     "rewards": {
       "travel": 5, "dining": 1, "groceries": 1, "streaming": 1,
@@ -70,6 +76,7 @@
     "name": "Amex Blue Cash Preferred",
     "issuer": "American Express",
     "network": "Amex",
+    "annual_fee": 95,
     "match_keywords": ["blue cash preferred", "bcp"],
     "rewards": {
       "groceries": 6, "streaming": 6, "gas": 3, "travel": 3,
@@ -81,6 +88,7 @@
     "name": "Amex Blue Cash Everyday",
     "issuer": "American Express",
     "network": "Amex",
+    "annual_fee": 0,
     "match_keywords": ["blue cash everyday", "bce"],
     "rewards": {
       "groceries": 3, "online_shopping": 3, "gas": 3,
@@ -92,6 +100,7 @@
     "name": "Citi Double Cash",
     "issuer": "Citi",
     "network": "Mastercard",
+    "annual_fee": 0,
     "match_keywords": ["double cash"],
     "rewards": {
       "groceries": 2, "dining": 2, "gas": 2, "travel": 2,
@@ -103,6 +112,7 @@
     "name": "Citi Custom Cash",
     "issuer": "Citi",
     "network": "Mastercard",
+    "annual_fee": 0,
     "match_keywords": ["custom cash"],
     "rewards": {
       "groceries": 5, "dining": 5, "gas": 5, "travel": 5,
@@ -114,6 +124,7 @@
     "name": "Capital One Venture X",
     "issuer": "Capital One",
     "network": "Visa",
+    "annual_fee": 395,
     "match_keywords": ["venture x"],
     "rewards": {
       "travel": 5, "dining": 2, "groceries": 2, "gas": 2,
@@ -125,6 +136,7 @@
     "name": "Capital One Venture",
     "issuer": "Capital One",
     "network": "Visa",
+    "annual_fee": 95,
     "match_keywords": ["venture"],
     "rewards": {
       "travel": 5, "dining": 2, "groceries": 2, "gas": 2,
@@ -136,6 +148,7 @@
     "name": "Capital One Savor",
     "issuer": "Capital One",
     "network": "Mastercard",
+    "annual_fee": 95,
     "match_keywords": ["savor "],
     "rewards": {
       "dining": 4, "streaming": 4, "groceries": 3, "travel": 1,
@@ -147,6 +160,7 @@
     "name": "Capital One SavorOne",
     "issuer": "Capital One",
     "network": "Mastercard",
+    "annual_fee": 0,
     "match_keywords": ["savorone"],
     "rewards": {
       "dining": 3, "streaming": 3, "groceries": 3, "travel": 1,
@@ -158,6 +172,7 @@
     "name": "Capital One Quicksilver",
     "issuer": "Capital One",
     "network": "Visa",
+    "annual_fee": 0,
     "match_keywords": ["quicksilver"],
     "rewards": {
       "groceries": 1.5, "dining": 1.5, "gas": 1.5, "travel": 1.5,
@@ -169,6 +184,7 @@
     "name": "Discover it Cash Back",
     "issuer": "Discover",
     "network": "Discover",
+    "annual_fee": 0,
     "match_keywords": ["discover it", "discover card"],
     "rewards": {
       "groceries": 5, "dining": 5, "gas": 5, "online_shopping": 5,
@@ -180,6 +196,7 @@
     "name": "Wells Fargo Active Cash",
     "issuer": "Wells Fargo",
     "network": "Visa",
+    "annual_fee": 0,
     "match_keywords": ["active cash"],
     "rewards": {
       "groceries": 2, "dining": 2, "gas": 2, "travel": 2,
@@ -191,6 +208,7 @@
     "name": "Apple Card",
     "issuer": "Goldman Sachs",
     "network": "Mastercard",
+    "annual_fee": 0,
     "match_keywords": ["apple card"],
     "rewards": {
       "groceries": 1, "dining": 1, "gas": 1, "travel": 1,
@@ -202,6 +220,7 @@
     "name": "U.S. Bank Cash+",
     "issuer": "U.S. Bank",
     "network": "Visa",
+    "annual_fee": 0,
     "match_keywords": ["cash+", "cash plus"],
     "rewards": {
       "groceries": 2, "dining": 2, "gas": 2, "streaming": 5,
@@ -213,6 +232,7 @@
     "name": "Marriott Bonvoy Brilliant",
     "issuer": "American Express",
     "network": "Amex",
+    "annual_fee": 650,
     "match_keywords": ["bonvoy", "marriott"],
     "rewards": {
       "travel": 6, "dining": 3, "groceries": 1, "gas": 1,

@@ -36,4 +36,5 @@ export const api = {
     request(`/api/accounts/${accountId}/match`, { method: 'POST', body: JSON.stringify({ card_id: cardId }) }),
   cards: () => request('/api/cards'),
   insights: () => request('/api/insights'),
+  recommendations: () => request('/api/recommendations'),
 };

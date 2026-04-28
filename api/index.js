@@ -9,6 +9,7 @@ import crypto from 'crypto';
 import { db, getOrCreateUser } from './db.js';
 import { plaidClient, PLAID_PRODUCTS, PLAID_COUNTRY_CODES } from './plaid.js';
 import { CARDS, categoryFromPlaid, rewardRate, bestCardFor, matchCardFromAccount } from './cards.js';
+import { recommendCards } from './recommendations.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -204,6 +205,33 @@ app.get('/api/insights', (req, res) => {
     total_missed_rewards: Number(totalMissed.toFixed(2)),
     best_by_category: byCategory,
   });
+});
+
+app.get('/api/recommendations', (req, res) => {
+  const userId = getUserId(req);
+  const cards = userCards(userId);
+  const ownedCardIds = cards.map(c => c.id);
+
+  const txs = db.prepare(`
+    SELECT t.*
+    FROM transactions t
+    WHERE t.user_id = ? AND t.amount > 0
+    ORDER BY t.date DESC
+  `).all(userId);
+
+  let days = 30;
+  if (txs.length > 0) {
+    const dates = txs.map(t => t.date).filter(Boolean).sort();
+    if (dates.length >= 2) {
+      const oldest = new Date(dates[0]);
+      const newest = new Date(dates[dates.length - 1]);
+      const span = Math.max(1, Math.round((newest - oldest) / 86400000));
+      days = Math.min(span, 90);
+    }
+  }
+
+  const result = recommendCards({ transactions: txs, ownedCardIds, days });
+  res.json(result);
 });
 
 const distDir = join(__dirname, '..', 'dist');
