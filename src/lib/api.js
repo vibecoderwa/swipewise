@@ -61,6 +61,8 @@ export const api = {
     request('/api/manual_cards', { method: 'POST', body: JSON.stringify({ card_ids }) }),
   insights: () => request('/api/insights'),
   recommendations: () => request('/api/recommendations'),
+  merchantsNear: ({ lat, lng, radius = 1500 }) =>
+    request(`/api/merchants/near?lat=${lat}&lng=${lng}&radius=${radius}`),
   credits: () => request('/api/credits'),
   toggleCredit: (card_id, credit_id, captured) =>
     request('/api/credits/toggle', { method: 'POST', body: JSON.stringify({ card_id, credit_id, captured }) }),

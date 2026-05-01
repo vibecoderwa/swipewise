@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import PlaidConnect from '../components/PlaidConnect.jsx';
 import CardArt from '../components/CardArt.jsx';
+import { api } from '../lib/api.js';
 import { inferCategory, categoryLabel, bestCardFor, QUICK_MERCHANTS } from '../lib/merchantInfer.js';
 import { rankMerchants, distanceLabel } from '../lib/nearby.js';
 
@@ -54,10 +55,27 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected }
   const [userLoc, setUserLoc] = useState(null);
   const [locStatus, setLocStatus] = useState('idle'); // 'idle' | 'pending' | 'granted' | 'denied'
   const [openMerchant, setOpenMerchant] = useState(null);
+  const [realMerchants, setRealMerchants] = useState(null); // null = haven't fetched yet
+  const [nearbyError, setNearbyError] = useState(null);
+
+  // When location lands, fetch real nearby merchants from /api/merchants/near.
+  // On failure or while loading we fall back to the demo set.
+  useEffect(() => {
+    if (!userLoc) return;
+    let cancelled = false;
+    setNearbyError(null);
+    api.merchantsNear({ lat: userLoc.lat, lng: userLoc.lng, radius: 1500 })
+      .then(r => { if (!cancelled) setRealMerchants(r.merchants || []); })
+      .catch(e => { if (!cancelled) setNearbyError(e.message); });
+    return () => { cancelled = true; };
+  }, [userLoc]);
 
   const ranked = useMemo(() => {
     if (userCards.length === 0) return [];
-    return rankMerchants(userLoc).map(m => {
+    const source = realMerchants && realMerchants.length > 0
+      ? realMerchants
+      : rankMerchants(userLoc);
+    return source.map(m => {
       const top = bestCardFor(m.category, userCards);
       const rest = userCards.filter(c => c.id !== top?.card.id);
       const runner = rest.length ? bestCardFor(m.category, rest) : null;
@@ -65,7 +83,9 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected }
       const level = confidenceLevel(top, runner);
       return { ...m, top, runner, uplift, level };
     });
-  }, [userCards, userLoc]);
+  }, [userCards, userLoc, realMerchants]);
+
+  const usingReal = userLoc && realMerchants && realMerchants.length > 0;
 
   // First-run state — no cards yet.
   if (!hasAccounts) {
@@ -121,8 +141,12 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected }
       </div>
 
       <div className="geo-eyebrow">
-        <span className={`geo-dot ${locStatus === 'granted' ? 'on' : ''}`} />
-        {locStatus === 'granted' ? 'Near you · live' : 'Near you · sample'}
+        <span className={`geo-dot ${usingReal ? 'on' : ''}`} />
+        {usingReal
+          ? 'Near you · live'
+          : locStatus === 'granted'
+            ? 'Near you · loading…'
+            : 'Near you · sample'}
       </div>
       <h1 className="hero-q" style={{ marginTop: 8 }}>
         {ranked.length === 0
@@ -149,6 +173,11 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected }
       {locStatus === 'denied' && (
         <div className="hero-q-secondary" style={{ textAlign: 'left', marginTop: 10 }}>
           Location denied — list shown is a sample.
+        </div>
+      )}
+      {nearbyError && (
+        <div className="hero-q-secondary" style={{ textAlign: 'left', marginTop: 10 }}>
+          {nearbyError} Showing a sample for now.
         </div>
       )}
 

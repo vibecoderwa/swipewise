@@ -10,6 +10,7 @@ import { db, getOrCreateUser, findUserByPhone, setUserPhone } from './db.js';
 import { plaidClient, PLAID_PRODUCTS, PLAID_COUNTRY_CODES } from './plaid.js';
 import { CARDS, categoryFromPlaid, rewardRate, bestCardFor, matchCardFromAccount } from './cards.js';
 import { recommendCards } from './recommendations.js';
+import { findMerchantsNear } from './places.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -356,6 +357,38 @@ app.post('/api/credits/toggle', (req, res) => {
     .run(userId, card_id, credit_id, captured ? 1 : 0, Date.now());
 
   res.json({ ok: true });
+});
+
+// FR-GEO-05 — nearby merchants via OpenStreetMap (Overpass).
+// In-memory TTL cache keeps repeat lookups cheap and stays gentle on the
+// public Overpass endpoint.
+const NEARBY_CACHE = new Map();
+const NEARBY_TTL_MS = 5 * 60 * 1000;
+
+app.get('/api/merchants/near', async (req, res) => {
+  const lat = parseFloat(req.query.lat);
+  const lng = parseFloat(req.query.lng);
+  const radius = Math.min(parseInt(req.query.radius || '1500', 10), 5000);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return res.status(400).json({ error: 'lat and lng query params required' });
+  }
+
+  // Cache key snaps to ~110m grid so small position drift doesn't bust cache.
+  const key = `${lat.toFixed(3)},${lng.toFixed(3)},${radius}`;
+  const hit = NEARBY_CACHE.get(key);
+  if (hit && hit.expires > Date.now()) {
+    return res.json({ merchants: hit.value, cached: true });
+  }
+
+  try {
+    const merchants = await findMerchantsNear({ lat, lng, radiusMeters: radius });
+    NEARBY_CACHE.set(key, { value: merchants, expires: Date.now() + NEARBY_TTL_MS });
+    res.json({ merchants, cached: false });
+  } catch (err) {
+    console.error('nearby error:', err.message);
+    res.status(502).json({ error: 'Couldn\'t reach the places service. Try again in a bit.' });
+  }
 });
 
 app.get('/api/recommendations', (req, res) => {
