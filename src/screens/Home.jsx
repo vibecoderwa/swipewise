@@ -44,16 +44,17 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected }
           <span>Swipewise</span>
         </div>
         <h1 className="hero-q">
-          Which card should<br/>
-          I use <em>right now</em>?
+          Your wallet<br/>
+          just got<br/>
+          <span className="accent">opinionated.</span>
         </h1>
         <p className="hero-q-sub">
-          Connect your cards to start. Then we'll tell you which one to swipe — every time.
+          Bring your wallet, not your card numbers. We read which cards you have and tell you which to swipe — <i>before</i> you swipe it.
         </p>
         {error && <div className="error">{error}</div>}
         <PlaidConnect onConnected={onConnected} />
         <div className="hero-q-secondary">
-          Read-only · Plaid-secured · no card numbers stored.
+          Read-only · Plaid-secured · no card numbers stored
         </div>
       </div>
     );
@@ -71,7 +72,7 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected }
         I use <em>right now</em><span className="q-mark">?</span>
       </h1>
       <p className="hero-q-sub">
-        Detect your location or type a store name to get an instant card recommendation.
+        Detect your location or type a store name. We'll pick the card that earns most.
       </p>
 
       {error && <div className="error">{error}</div>}
@@ -88,7 +89,7 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected }
 
       <div className="or-divider"><span>or</span></div>
 
-      <div className="metric-eyebrow" style={{ marginBottom: 8 }}>Simulate store name</div>
+      <div className="metric-eyebrow" style={{ marginBottom: 8 }}>Type a store name</div>
 
       <div className="search-box">
         <span className="search-icon">
