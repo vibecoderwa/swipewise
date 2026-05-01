@@ -265,5 +265,17 @@
       { "id": "marriott_dining", "name": "Dining credit", "value": 300, "cadence": "annual", "description": "$25/month at restaurants worldwide.", "defaultCaptured": false },
       { "id": "marriott_freenight", "name": "Free Night Award", "value": 650, "cadence": "annual", "description": "One free night up to 85,000 points (~$500-700) on cardmember anniversary.", "defaultCaptured": true }
     ]
+  },
+  {
+    "id": "bilt",
+    "name": "Bilt Mastercard",
+    "issuer": "Wells Fargo",
+    "network": "Mastercard",
+    "annual_fee": 0,
+    "match_keywords": ["bilt", "bilt mastercard"],
+    "rewards": {
+      "dining": 3, "travel": 2, "streaming": 1, "groceries": 1,
+      "online_shopping": 1, "gas": 1, "other": 1
+    }
   }
 ]

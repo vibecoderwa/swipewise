@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import PlaidConnect from '../components/PlaidConnect.jsx';
+import CardArt from '../components/CardArt.jsx';
 import { api } from '../lib/api.js';
 
 // Onboarding — Plaid-first with manual fallback (FR-ONB-01, FR-ONB-02).
@@ -157,7 +158,7 @@ function ManualPick({ onBack, onDone }) {
               className={`manual-card ${isSel ? 'selected' : ''}`}
               onClick={() => toggle(c.id)}
             >
-              <span className={`chip ${brandKey(c)}`}>{c.issuer === 'American Express' ? 'AMEX' : c.issuer.slice(0, 4).toUpperCase()}</span>
+              <CardArt card={c} size="sm" />
               <div className="manual-card-text">
                 <div className="manual-card-name">{c.name}</div>
                 <div className="manual-card-fee">{c.annual_fee ? `$${c.annual_fee}/yr` : 'No fee'}</div>

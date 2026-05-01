@@ -1,11 +1,16 @@
-// Real-image filenames live in /public/cards/{card.id}.jpg
-// Anything not in this set will render the stylized SVG fallback.
+// Real-image filenames live in /public/cards/{card.id}.{ext}.
+// Default extension is .jpg; override below for cards stored as .png.
+const IMAGE_EXT = {
+  chase_freedom_unlimited: 'png',
+};
 const HAS_IMAGE = new Set([
   'chase_sapphire_preferred',
   'amex_gold',
   'amex_platinum',
   'capone_venture_x',
   'capone_savor',
+  'bilt',
+  'chase_freedom_unlimited',
 ]);
 
 const ISSUER_THEMES = {
@@ -32,7 +37,9 @@ function themeFor(card) {
 }
 
 export function imagePathFor(card) {
-  return HAS_IMAGE.has(card.id) ? `/cards/${card.id}.jpg` : null;
+  if (!HAS_IMAGE.has(card.id)) return null;
+  const ext = IMAGE_EXT[card.id] || 'jpg';
+  return `/cards/${card.id}.${ext}`;
 }
 
 export function svgFallbackFor(card) {

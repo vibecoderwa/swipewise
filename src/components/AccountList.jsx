@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../lib/api.js';
+import CardArt from './CardArt.jsx';
 
 function brandKey(card) {
   if (!card) return 'default';
@@ -32,9 +33,9 @@ export default function AccountList({ accounts, cards, onChange }) {
     const brand = brandKey(a.matched_card);
     return (
       <div className={`card-mini ${brand}`} key={a.id}>
-        <div className={`chip ${brand}`}>
-          {a.matched_card?.name?.split(' ')[0]?.toUpperCase().slice(0, 5) || '••••'}
-        </div>
+        {a.matched_card
+          ? <CardArt card={a.matched_card} size="sm" />
+          : <div className={`chip ${brand}`}>••••</div>}
         <div className="card-mini-name">
           {a.matched_card?.name || `${a.institution_name || 'Bank'} · ${a.name}`}
           <span className="iss">
