@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Swipewise — Functional Requirements</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,800&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1A1814;
+    --paper:#F7F2E9;
+    --cream:#EFE7D7;
+    --lemon:#D4B254;
+    --mint:#9CB49A;
+    --coral:#C26B5A;
+    --sky:#8BA5B8;
+    --plum:#8C7A9E;
+    --graphite:#3A362F;
+    --dim:#8C8578;
+    --hairline:#DCD4C1;
+    --shadow:2px 2px 0 0 var(--ink);
+    --border:1.5px solid var(--ink);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:"Inter Tight",sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .page{max-width:880px;margin:0 auto;padding:64px 40px 120px}
+  /* Top meta strip */
+  .meta{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:var(--border);padding-bottom:18px;margin-bottom:48px;gap:24px;flex-wrap:wrap}
+  .meta .label{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:6px}
+  .meta .val{font-family:"Inter Tight",sans-serif;font-size:14px;color:var(--ink);font-weight:500}
+  .meta-block{min-width:120px}
+
+  /* Hero */
+  h1.hero{font-family:"Fraunces",serif;font-weight:800;font-style:italic;font-size:84px;line-height:0.95;letter-spacing:-0.02em;margin:0 0 12px;font-variation-settings:"opsz" 144}
+  .hero-sub{font-family:"Fraunces",serif;font-style:normal;font-weight:400;font-size:22px;line-height:1.4;color:var(--graphite);margin:0 0 36px;max-width:640px}
+  .doc-tag{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;background:var(--ink);color:var(--paper);padding:6px 10px;margin-bottom:24px}
+
+  /* TOC */
+  .toc{border:var(--border);background:var(--cream);box-shadow:var(--shadow);padding:24px 28px;margin:0 0 64px}
+  .toc h2{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;margin:0 0 14px;color:var(--dim);font-weight:500}
+  .toc ol{margin:0;padding:0;list-style:none;counter-reset:toc;column-count:2;column-gap:32px}
+  .toc li{counter-increment:toc;font-size:14px;padding:4px 0;break-inside:avoid}
+  .toc li::before{content:counter(toc, decimal-leading-zero);font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--dim);margin-right:10px}
+  .toc a{color:var(--ink);text-decoration:none;border-bottom:1px solid transparent}
+  .toc a:hover{border-bottom-color:var(--ink)}
+
+  /* Sections */
+  section{margin:0 0 56px;scroll-margin-top:24px}
+  .section-num{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:6px}
+  h2.section-title{font-family:"Fraunces",serif;font-weight:600;font-size:36px;line-height:1.1;letter-spacing:-0.01em;margin:0 0 8px}
+  .section-lede{font-family:"Fraunces",serif;font-style:italic;font-size:18px;color:var(--graphite);margin:0 0 24px;max-width:620px}
+  h3{font-family:"Inter Tight",sans-serif;font-size:15px;font-weight:600;letter-spacing:0.01em;margin:28px 0 10px;text-transform:none}
+  h3 .h3-num{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--dim);font-weight:500;margin-right:10px;letter-spacing:0.08em}
+
+  p{margin:0 0 14px;max-width:680px}
+  ul{margin:0 0 14px;padding-left:0;list-style:none;max-width:680px}
+  ul li{position:relative;padding:6px 0 6px 22px;border-bottom:1px dashed var(--hairline)}
+  ul li:last-child{border-bottom:none}
+  ul li::before{content:"";position:absolute;left:0;top:14px;width:8px;height:8px;background:var(--ink)}
+
+  /* Requirement rows */
+  .req{display:grid;grid-template-columns:88px 1fr auto;gap:16px;align-items:start;border-bottom:1px solid var(--hairline);padding:14px 0}
+  .req:last-child{border-bottom:none}
+  .req .id{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:0.06em;color:var(--ink);background:var(--cream);border:1px solid var(--hairline);padding:3px 8px;align-self:start;display:inline-block;width:fit-content}
+  .req .body strong{font-weight:600}
+  .req .body p{margin:0 0 4px;font-size:14.5px;line-height:1.5}
+  .req .body .desc{color:var(--graphite);font-size:13.5px}
+  .pri{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 7px;border:1px solid var(--ink);align-self:start;white-space:nowrap}
+  .pri.must{background:var(--ink);color:var(--paper)}
+  .pri.should{background:var(--lemon);color:var(--ink)}
+  .pri.could{background:var(--paper);color:var(--ink)}
+  .pri.wont{background:var(--paper);color:var(--dim);border-color:var(--dim)}
+
+  /* Tables */
+  table{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:13.5px;border:var(--border);box-shadow:var(--shadow);background:var(--paper)}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--hairline);vertical-align:top}
+  th{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:500;color:var(--dim);background:var(--cream)}
+  tr:last-child td{border-bottom:none}
+  td code{font-family:"JetBrains Mono",monospace;font-size:12px;background:var(--cream);padding:1px 5px;border-radius:3px}
+
+  /* Callouts */
+  .callout{border:var(--border);box-shadow:var(--shadow);padding:18px 20px;margin:18px 0 22px;background:var(--paper)}
+  .callout.mint{background:color-mix(in oklab, var(--mint) 22%, var(--paper))}
+  .callout.coral{background:color-mix(in oklab, var(--coral) 18%, var(--paper))}
+  .callout.lemon{background:color-mix(in oklab, var(--lemon) 22%, var(--paper))}
+  .callout .tag{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink);font-weight:600;margin-bottom:6px;display:block}
+  .callout p{margin:0;font-size:14px}
+
+  /* Footer */
+  footer{border-top:var(--border);padding-top:18px;margin-top:64px;display:flex;justify-content:space-between;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);flex-wrap:wrap;gap:8px}
+
+  /* small screens */
+  @media (max-width:640px){
+    .page{padding:40px 22px 80px}
+    h1.hero{font-size:56px}
+    .toc ol{column-count:1}
+    .req{grid-template-columns:1fr;gap:6px}
+    .req .id, .pri{justify-self:start}
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <span class="doc-tag">FRD · v1.0 · Internal</span>
+  <h1 class="hero">Functional<br>Requirements.</h1>
+  <p class="hero-sub">Swipewise is a personal "agentic" credit-card optimizer. It tells you which card to swipe <em>before</em> you swipe it — based on where you are, what you bought last week, and what each card actually pays back.</p>
+
+  <div class="meta">
+    <div class="meta-block"><span class="label">Product</span><span class="val">Swipewise</span></div>
+    <div class="meta-block"><span class="label">Platform</span><span class="val">iOS-first · Expo + Swift</span></div>
+    <div class="meta-block"><span class="label">Release</span><span class="val">v1.0 (M0 → M4)</span></div>
+    <div class="meta-block"><span class="label">Status</span><span class="val">Draft</span></div>
+    <div class="meta-block"><span class="label">Updated</span><span class="val">Apr 24, 2026</span></div>
+  </div>
+
+  <nav class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#scope">Scope &amp; goals</a></li>
+      <li><a href="#personas">Users &amp; personas</a></li>
+      <li><a href="#auth">Authentication</a></li>
+      <li><a href="#onboarding">Onboarding &amp; bank linking</a></li>
+      <li><a href="#cards">Card &amp; rewards model</a></li>
+      <li><a href="#transactions">Transaction sync &amp; categorization</a></li>
+      <li><a href="#engine">Reward computation engine</a></li>
+      <li><a href="#geo">Geofencing &amp; location</a></li>
+      <li><a href="#notify">Push &amp; live notifications</a></li>
+      <li><a href="#widgets">Home &amp; lock-screen widgets</a></li>
+      <li><a href="#home">In-app home &amp; ranking</a></li>
+      <li><a href="#credits">Credits &amp; perks tracker</a></li>
+      <li><a href="#manual">Manual-adder swipe log</a></li>
+      <li><a href="#visual">Anti-loud aesthetic</a></li>
+      <li><a href="#settings">Settings &amp; preferences</a></li>
+      <li><a href="#privacy">Privacy, security &amp; compliance</a></li>
+      <li><a href="#nfr">Non-functional requirements</a></li>
+      <li><a href="#milestones">Milestones &amp; out-of-scope</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 -->
+  <section id="scope">
+    <span class="section-num">01 · Scope</span>
+    <h2 class="section-title">Scope &amp; goals</h2>
+    <p class="section-lede">A pocket concierge for three credit cards. Glanceable at the door, defensible at the dinner table.</p>
+
+    <h3><span class="h3-num">1.1</span>Product goals</h3>
+    <ul>
+      <li>Tell the user the optimal card for the merchant in front of them, in under 2 seconds, without opening the app.</li>
+      <li>Reconcile each month with what they <em>actually</em> earned vs. what they <em>could have</em> earned.</li>
+      <li>Surface unredeemed credits and perks before they expire — quietly, not noisily.</li>
+    </ul>
+
+    <h3><span class="h3-num">1.2</span>v1 card set</h3>
+    <table>
+      <thead><tr><th>Card</th><th>Annual fee</th><th>Headline rewards</th></tr></thead>
+      <tbody>
+        <tr><td>Amex Gold</td><td>$325</td><td>4× dining &amp; groceries</td></tr>
+        <tr><td>Chase Sapphire Reserve</td><td>$795</td><td>3× dining/travel · $300 travel credit · Priority Pass</td></tr>
+        <tr><td>Capital One Savor</td><td>$0</td><td>4% dining/entertainment · 3% groceries</td></tr>
+      </tbody>
+    </table>
+
+    <h3><span class="h3-num">1.3</span>Non-goals (v1)</h3>
+    <ul>
+      <li>Moving money, paying balances, or any action that requires write-access to a financial institution.</li>
+      <li>Recommending new cards the user does not own. (Read-only optimizer, not an affiliate funnel.)</li>
+      <li>Android. iPad. Watch. Web. CarPlay.</li>
+    </ul>
+  </section>
+
+  <!-- 2 -->
+  <section id="personas">
+    <span class="section-num">02 · Users</span>
+    <h2 class="section-title">Users &amp; personas</h2>
+    <p class="section-lede">Three personas, one app. Each gets a different slice of the product.</p>
+
+    <div class="callout lemon">
+      <span class="tag">Persona 01 · The Optimizer</span>
+      <p>Owns 2–4 rewards cards, knows their multipliers roughly, forgets them at the register. Comfortable connecting their bank when the value is clear. <strong>Gets the full app</strong> — pre-swipe guidance, reflective analytics, credit tracking, the whole thing.</p>
+    </div>
+
+    <div class="callout mint">
+      <span class="tag">Persona 02 · The Manual Adder</span>
+      <p>Loves the idea of pre-swipe guidance but isn't comfortable linking their full bank account. Willing to tell us which cards they own from a catalog. <strong>Gets the location layer</strong> — recommendations, push, widgets — but opts out of the analytics layer. The trade-off is shown explicitly at onboarding.</p>
+    </div>
+
+    <div class="callout">
+      <span class="tag">Persona 03 · The Skeptic-Turned-Linker</span>
+      <p>Starts as a Manual Adder, sees the app working, and upgrades to a bank connection later. Important enough to call out because the upgrade path must exist and must backfill cleanly.</p>
+    </div>
+
+    <h3><span class="h3-num">2.1</span>Modes of use</h3>
+    <ul>
+      <li><strong>Pre-swipe</strong> — at the door of a merchant; needs a glance, not a screen. <em>All personas.</em></li>
+      <li><strong>Reflective</strong> — Sunday morning; wants to see the month's tally and which credits are still on the table. <em>Linked personas only.</em></li>
+      <li><strong>Configurational</strong> — one-time setup or a card change; tolerates more friction once. <em>All personas.</em></li>
+    </ul>
+
+    <h3><span class="h3-num">2.2</span>Feature availability by persona</h3>
+    <table>
+      <thead><tr><th>Capability</th><th>Linked</th><th>Manual</th></tr></thead>
+      <tbody>
+        <tr><td>Location-based recommendations &amp; push</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Home &amp; lock-screen widgets</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Credits &amp; perks tracker (manual toggles)</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Realized vs. potential delta</td><td>Yes</td><td>—</td></tr>
+        <tr><td>Monthly timeline &amp; what-if math</td><td>Yes</td><td>—</td></tr>
+        <tr><td>Auto-detect credits from transactions</td><td>Yes</td><td>—</td></tr>
+        <tr><td>Geofence seeding from top merchants</td><td>Auto</td><td>From user-entered favorites + nearby</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 3 -->
+  <section id="auth">
+    <span class="section-num">03 · Auth</span>
+    <h2 class="section-title">Authentication</h2>
+    <p class="section-lede">Phone number in, OTP back, no passwords. Ever.</p>
+
+    <div class="req"><span class="id">FR-AUTH-01</span><div class="body"><p><strong>Phone-number sign-in</strong></p><p class="desc">User enters a phone number with country-code picker. Client validates format before submission. Backend issues a 6-digit OTP via SMS provider.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-AUTH-02</span><div class="body"><p><strong>OTP verification</strong></p><p class="desc">Six auto-advancing digit fields, paste-to-fill, 60s resend timer, 3-attempt lockout per code, codes expire in 10 minutes.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-AUTH-03</span><div class="body"><p><strong>Session tokens</strong></p><p class="desc">Backend returns short-lived JWT (1h) + rotating refresh token (30d), stored in iOS Keychain. No tokens in AsyncStorage.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-AUTH-04</span><div class="body"><p><strong>Sign-out &amp; account deletion</strong></p><p class="desc">Both available in settings. Deletion revokes all Plaid items and purges user data within 30 days; user receives email confirmation if email is on file.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-AUTH-05</span><div class="body"><p><strong>Biometric re-auth</strong></p><p class="desc">Face ID / Touch ID gate on app open and before viewing transaction-level detail. Configurable in settings.</p></div><span class="pri should">Should</span></div>
+    <div class="req"><span class="id">FR-AUTH-06</span><div class="body"><p><strong>Apple Sign-In</strong></p><p class="desc">Required by App Store guideline 4.8 if any third-party auth is offered. We're phone-only, so this is a "could" — but watch the review.</p></div><span class="pri could">Could</span></div>
+  </section>
+
+  <!-- 4 -->
+  <section id="onboarding">
+    <span class="section-num">04 · Onboarding</span>
+    <h2 class="section-title">Onboarding &amp; bank linking</h2>
+    <p class="section-lede">Bring your wallet, not your card numbers.</p>
+
+    <div class="req"><span class="id">FR-ONB-01</span><div class="body"><p><strong>Plaid Link as primary path</strong></p><p class="desc">User taps "Connect bank" → client requests <code>link_token</code> → opens Plaid Link → returns <code>public_token</code> to backend for exchange. Supports multiple institutions per user.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-ONB-02</span><div class="body"><p><strong>Manual card selection (fallback)</strong></p><p class="desc">If user declines Plaid, present catalog of supported cards (3 in v1) with multi-select. Saves card identifiers only — no card numbers, no PANs.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-ONB-03</span><div class="body"><p><strong>Plaid item mapping → owned cards</strong></p><p class="desc">Backend matches each linked credit account to a known card (by issuer + product detail) and persists the mapping. Unrecognized cards are listed as "tracked, not optimized".</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-ONB-04</span><div class="body"><p><strong>Permissions priming</strong></p><p class="desc">Pre-permission rationale screens for: Notifications, Location (When In Use → Always), and Plaid data sharing. Each explains the value before the OS dialog fires.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-ONB-05</span><div class="body"><p><strong>Resumable onboarding</strong></p><p class="desc">If user drops off mid-flow (e.g. denies Plaid, app backgrounded), resume at last completed step on next launch.</p></div><span class="pri should">Should</span></div>
+    <div class="req"><span class="id">FR-ONB-06</span><div class="body"><p><strong>Backfill</strong></p><p class="desc">On first Plaid link, fetch up to 24 months of historical transactions where available, capped at 5,000 records, paged.</p></div><span class="pri must">Must</span></div>
+  </section>
+
+  <!-- 5 -->
+  <section id="cards">
+    <span class="section-num">05 · Cards</span>
+    <h2 class="section-title">Card &amp; rewards model</h2>
+    <p class="section-lede">A single source of truth, used identically by client and server.</p>
+
+    <div class="req"><span class="id">FR-CARD-01</span><div class="body"><p><strong>Shared rewards module</strong></p><p class="desc">Cards, multipliers, credits and CPP defaults live in <code>core/rewards.ts</code>. Both the mobile client and backend import it. Updates ship via app update; no remote-config required for v1.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-CARD-02</span><div class="body"><p><strong>Multiplier resolution</strong></p><p class="desc">For a (card, category) pair, return the earn multiplier as a number plus the unit ("points" or "cash"). Handles category caps (e.g. quarterly, annual).</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-CARD-03</span><div class="body"><p><strong>Cents-per-point (CPP)</strong></p><p class="desc">Default CPP per card with user-overridable values in settings. CPP feeds the dollar value of points used everywhere in the app.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-CARD-04</span><div class="body"><p><strong>Credits &amp; perks</strong></p><p class="desc">Each card has a list of credits with cadence (annual/quarterly/monthly), face value, and a "captured" toggle. The CSR $300 travel credit is treated as a durable, near-100%-captured credit by default.</p></div><span class="pri must">Must</span></div>
+  </section>
+
+  <!-- 6 -->
+  <section id="transactions">
+    <span class="section-num">06 · Transactions</span>
+    <h2 class="section-title">Transaction sync &amp; categorization</h2>
+    <p class="section-lede">Plaid talks. We translate. The user can override.</p>
+
+    <h3><span class="h3-num">6.1</span>Sync</h3>
+    <div class="req"><span class="id">FR-TX-01</span><div class="body"><p><strong>Webhook-driven sync</strong></p><p class="desc">Backend handles <code>TRANSACTIONS:SYNC_UPDATES_AVAILABLE</code> webhooks and calls <code>/transactions/sync</code> with the cursor; falls back to a 6-hour cron if a webhook is missed.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-TX-02</span><div class="body"><p><strong>Idempotent upserts</strong></p><p class="desc">Adds, modifies, removes from <code>/sync</code> are applied idempotently. Removed transactions are soft-deleted, not hard-deleted, for 30 days.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-TX-03</span><div class="body"><p><strong>Re-link &amp; ITEM_LOGIN_REQUIRED</strong></p><p class="desc">When Plaid item enters error state, client surfaces a non-blocking banner and a "fix connection" deep link into Plaid Link update mode.</p></div><span class="pri must">Must</span></div>
+
+    <h3><span class="h3-num">6.2</span>Categorization</h3>
+    <div class="req"><span class="id">FR-TX-04</span><div class="body"><p><strong>15-bucket category map</strong></p><p class="desc">Map Plaid <code>personal_finance_category.primary</code> + <code>.detailed</code> to dining, groceries, flights, hotels, travel, rideshare, gas, transit, streaming, entertainment, online, shopping, utilities, health, other.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-TX-05</span><div class="body"><p><strong>Per-transaction override</strong></p><p class="desc">User can re-categorize any transaction. Overrides persist and improve future suggestions for that merchant (per user, not global).</p></div><span class="pri should">Should</span></div>
+    <div class="req"><span class="id">FR-TX-06</span><div class="body"><p><strong>Merchant inference</strong></p><p class="desc">Group transactions by merchant name + MCC. Show top recurring merchants in the geofence-eligibility list.</p></div><span class="pri must">Must</span></div>
+  </section>
+
+  <!-- 7 -->
+  <section id="engine">
+    <span class="section-num">07 · Engine</span>
+    <h2 class="section-title">Reward computation engine</h2>
+    <p class="section-lede">Pure functions. No side effects. Same numbers on the phone and on the server.</p>
+
+    <div class="req"><span class="id">FR-ENG-01</span><div class="body"><p><strong>computeAll(state) → Result</strong></p><p class="desc">Given user state (transactions, owned cards, credits captured, CPP), returns: net value per card, best card per transaction, what-if delta vs. actual, total annualized.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-ENG-02</span><div class="body"><p><strong>monthlyTimeline(state)</strong></p><p class="desc">Returns a 12-month series of (month, realized, optimal) for the timeline chart. Fills empty months with zero, not null.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-ENG-03</span><div class="body"><p><strong>Best-card-for-merchant</strong></p><p class="desc">Pure function over (merchantId, basketEstimate?, ownedCards) → { bestCard, multiplier, expectedReward, runnerUp }. Used by geofence push, widgets, and home list.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-ENG-04</span><div class="body"><p><strong>Determinism</strong></p><p class="desc">Same input → same output. No <code>Date.now()</code>, no randomness inside the engine. Server unit tests pin behavior with fixtures.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-ENG-05</span><div class="body"><p><strong>Offline-capable</strong></p><p class="desc">Client can re-rank cards for a merchant without a network round-trip, given cached card structures and a recent merchant lookup.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-ENG-06</span><div class="body"><p><strong>Confidence score on every recommendation</strong></p><p class="desc">Engine emits a confidence value alongside each best-card pick, derived from the gap between #1 and #2 (e.g. 4× vs. 1× = high; 3× vs. 2.5× = low). Surfaced wherever a reco is shown — home list, push, widgets, merchant detail.</p></div><span class="pri should">Should</span></div>
+    <div class="req"><span class="id">FR-ENG-07</span><div class="body"><p><strong>Basket-aware uplift estimate</strong></p><p class="desc">For linked users, when a merchant has ≥3 historical visits, return a basket-aware expected uplift (median basket × multiplier delta × CPP) instead of a generic per-dollar figure. Used in push body copy and merchant detail. Falls back gracefully when no history exists.</p></div><span class="pri should">Should</span></div>
+  </section>
+
+  <!-- 8 -->
+  <section id="geo">
+    <span class="section-num">08 · Geofencing</span>
+    <h2 class="section-title">Geofencing &amp; location</h2>
+    <p class="section-lede">Quietly aware. Loud only at the door.</p>
+
+    <div class="req"><span class="id">FR-GEO-01</span><div class="body"><p><strong>Top-merchant geofences</strong></p><p class="desc">After Plaid sync, derive top 20 recurring merchants by frequency and create geofences (radius 100m) for each via <code>Location.startGeofencingAsync</code>.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-GEO-02</span><div class="body"><p><strong>Background task</strong></p><p class="desc">Geofence enter/exit events are handled in a background task and resilient to app suspension. Limit to iOS's 20-region cap; rotate regions based on user location.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-GEO-03</span><div class="body"><p><strong>"Always" permission rationale</strong></p><p class="desc">Explicit pre-prompt explaining what we do and don't do with location. Degrade gracefully if user grants only "When In Use" — list works, geofences don't.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-GEO-04</span><div class="body"><p><strong>Cooldown per merchant</strong></p><p class="desc">Suppress repeated arrival notifications for the same merchant within 4 hours. Per-merchant override available in settings.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-GEO-05</span><div class="body"><p><strong>Nearby merchants endpoint</strong></p><p class="desc"><code>GET /merchants/near?lat&amp;lng&amp;radius</code> returns merchants ranked by best-card uplift, capped at 25 results.</p></div><span class="pri must">Must</span></div>
+  </section>
+
+  <!-- 9 -->
+  <section id="notify">
+    <span class="section-num">09 · Notifications</span>
+    <h2 class="section-title">Push &amp; live notifications</h2>
+    <p class="section-lede">A whisper, not a klaxon.</p>
+
+    <div class="req"><span class="id">FR-NOT-01</span><div class="body"><p><strong>Arrival local notification</strong></p><p class="desc">On geofence enter: schedule a local notification with merchant + best card + expected uplift in dollars. Tap → opens to merchant detail.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-NOT-02</span><div class="body"><p><strong>Live Activity / Dynamic Island</strong></p><p class="desc">Start a Live Activity on geofence enter; auto-end after 30 minutes or on geofence exit. Compact view shows card name, expanded shows multiplier &amp; expected reward.</p></div><span class="pri should">Should</span></div>
+    <div class="req"><span class="id">FR-NOT-03</span><div class="body"><p><strong>APNs server push for high-value events</strong></p><p class="desc">Server-issued pushes for: credit expiring within 14 days, card anniversary, large unrecognized transaction. Rate-limited to 2/day per user.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-NOT-04</span><div class="body"><p><strong>Notification settings</strong></p><p class="desc">Per-channel toggles: arrivals, expiring credits, weekly recap, anniversary. Quiet hours (default 22:00–08:00).</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-NOT-05</span><div class="body"><p><strong>Dollar-value framing</strong></p><p class="desc">Notification body always includes a concrete dollar uplift estimate (e.g. "+$9.60 on your usual basket"), not raw multipliers.</p></div><span class="pri must">Must</span></div>
+  </section>
+
+  <!-- 10 -->
+  <section id="widgets">
+    <span class="section-num">10 · Widgets</span>
+    <h2 class="section-title">Home &amp; lock-screen widgets</h2>
+    <p class="section-lede">Native Swift. The mockups are the visual spec.</p>
+
+    <div class="req"><span class="id">FR-WID-01</span><div class="body"><p><strong>WidgetKit target</strong></p><p class="desc">Widget extension named SwipewiseWidgets, sharing data with main app via App Group <code>group.com.swipewise.shared</code>. SwiftUI views.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-WID-02</span><div class="body"><p><strong>App Group bridge</strong></p><p class="desc">Main app writes <code>widgetData.json</code> on every relevant event (location change, sync complete, settings change). Widget reads in its TimelineProvider.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-WID-03</span><div class="body"><p><strong>Supported sizes</strong></p><p class="desc">systemSmall (nearest, month-total) · systemMedium (top-3, "you're at") · systemLarge (nearby, monthly) · accessoryRectangular · accessoryCircular.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-WID-04</span><div class="body"><p><strong>Refresh cadence</strong></p><p class="desc">Reload timeline on geofence enter, transaction sync, and at most every 15 minutes idle. WidgetCenter reload triggered explicitly from RN bridge.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-WID-05</span><div class="body"><p><strong>Tap deep links</strong></p><p class="desc">Each widget surface taps into a specific in-app destination via <code>widgetURL</code> (merchant detail, monthly summary, credits screen).</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-WID-06</span><div class="body"><p><strong>Empty / pre-permission states</strong></p><p class="desc">Widgets render a polite "Open Swipewise to set up" state when no data or no Always-location permission.</p></div><span class="pri must">Must</span></div>
+  </section>
+
+  <!-- 11 -->
+  <section id="home">
+    <span class="section-num">11 · Home</span>
+    <h2 class="section-title">In-app home &amp; ranking</h2>
+    <p class="section-lede">Open the app, see what to do next.</p>
+
+    <div class="req"><span class="id">FR-HOME-01</span><div class="body"><p><strong>Geo-ranked merchant list</strong></p><p class="desc">Default home view: list of nearby merchants with best card, multiplier, expected uplift, and distance. Pull-to-refresh re-queries location + nearby endpoint.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-HOME-02</span><div class="body"><p><strong>Map peek</strong></p><p class="desc">Compact map header with pins for the visible merchant set. Non-interactive in v1; tap expands to full map.</p></div><span class="pri should">Should</span></div>
+    <div class="req"><span class="id">FR-HOME-03</span><div class="body"><p><strong>Merchant detail</strong></p><p class="desc">Per-merchant: best card, runner-up, history of past visits with realized rewards, "Use this card" hint.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-HOME-04</span><div class="body"><p><strong>Period toggle (M/Q/Y)</strong></p><p class="desc">Hero summary supports Month / Quarter / Year framing. Persists across sessions per user.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-HOME-05</span><div class="body"><p><strong>Realized vs. potential delta</strong></p><p class="desc">Always show realized rewards alongside the "what if you'd swiped optimally" delta. No hiding the gap.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-HOME-06</span><div class="body"><p><strong>"Left on the table" frame</strong></p><p class="desc">Monthly summary surfaces the gap between realized and optimal as a kindly-framed list of the specific transactions that drove it. Each row supports a one-tap "I had a reason" dismiss that excludes it from future regret math without hiding the underlying number.</p></div><span class="pri should">Should</span></div>
+    <div class="req"><span class="id">FR-HOME-07</span><div class="body"><p><strong>Confidence visible on reco rows</strong></p><p class="desc">Each merchant row in the home list shows the FR-ENG-06 confidence value as a small bar or dot pattern. Low-confidence picks read visibly different from high-confidence ones; never hidden, never alarming.</p></div><span class="pri should">Should</span></div>
+  </section>
+
+  <!-- 12 -->
+  <section id="credits">
+    <span class="section-num">12 · Credits</span>
+    <h2 class="section-title">Credits &amp; perks tracker</h2>
+    <p class="section-lede">The math people scrutinize hardest.</p>
+
+    <div class="req"><span class="id">FR-CRD-01</span><div class="body"><p><strong>Per-card accordion</strong></p><p class="desc">Credits screen lists each card's credits with face value, cadence, and a captured / not-captured toggle. Toggles persist server-side.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-CRD-02</span><div class="body"><p><strong>Durable Travel Credit hero</strong></p><p class="desc">CSR's $300 travel credit gets a hero callout above the accordion: realized YTD vs. remaining vs. expiry date.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-CRD-03</span><div class="body"><p><strong>Auto-detect from transactions</strong></p><p class="desc">When a transaction matches a credit's eligibility window + merchant set, mark it as captured automatically. User can override.</p></div><span class="pri should">Should</span></div>
+    <div class="req"><span class="id">FR-CRD-04</span><div class="body"><p><strong>Expiring soon</strong></p><p class="desc">Credits within 30 days of expiry surface a coral indicator on the home screen and trigger an APNs push at 14 days (FR-NOT-03).</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-CRD-05</span><div class="body"><p><strong>"Realized vs. potential" side-by-side</strong></p><p class="desc">Annual fee math is shown with both numbers visible at all times — never just the optimistic figure.</p></div><span class="pri must">Must</span></div>
+  </section>
+
+  <!-- 12.5 -->
+  <section id="manual">
+    <span class="section-num">12.5 · Manual</span>
+    <h2 class="section-title">Manual-adder swipe log</h2>
+    <p class="section-lede">A respectful path for the bank-shy. They tell us what they swiped; we give them analytics.</p>
+
+    <div class="req"><span class="id">FR-MAN-01</span><div class="body"><p><strong>One-tap swipe log</strong></p><p class="desc">From a merchant detail or arrival screen, manual users can log "I just used [card] here" with a single tap. Optional amount entry, defaults to median basket if known. No bank linking required.</p></div><span class="pri should">Should</span></div>
+    <div class="req"><span class="id">FR-MAN-02</span><div class="body"><p><strong>Self-built history</strong></p><p class="desc">Logged swipes accumulate into a lightweight transaction history scoped to the manual user. Powers a reduced version of realized-vs-potential analytics — best-effort, clearly labeled as user-reported.</p></div><span class="pri should">Should</span></div>
+    <div class="req"><span class="id">FR-MAN-03</span><div class="body"><p><strong>Geofence seeding from logs</strong></p><p class="desc">After a manual user has logged ≥3 swipes at distinct merchants, those merchants seed the geofence list (replacing the "favorites only" fallback in FR-GEO-01).</p></div><span class="pri should">Should</span></div>
+    <div class="req"><span class="id">FR-MAN-04</span><div class="body"><p><strong>Upgrade path to linked</strong></p><p class="desc">A manual user can connect Plaid at any time. On link, the swipe log is preserved and shown as "reported" alongside Plaid-sourced "verified" transactions; duplicates are dedup'd by merchant + date heuristically.</p></div><span class="pri should">Should</span></div>
+  </section>
+
+  <!-- 13 -->
+  <section id="settings">
+    <span class="section-num">13 · Settings</span>
+    <h2 class="section-title">Settings &amp; preferences</h2>
+    <p class="section-lede">Power-user knobs without power-user dread.</p>
+
+    <div class="req"><span class="id">FR-SET-01</span><div class="body"><p><strong>CPP overrides</strong></p><p class="desc">Per-card cents-per-point sliders with sensible bounds. Defaults restorable in one tap.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-SET-02</span><div class="body"><p><strong>Annual fee toggles</strong></p><p class="desc">Include/exclude each card's annual fee from net-value calculations. Helpful for "is this card pulling its weight" framing.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-SET-03</span><div class="body"><p><strong>Manage Plaid items</strong></p><p class="desc">List of linked institutions with last-sync timestamp; per-item disconnect that revokes the access token server-side.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-SET-04</span><div class="body"><p><strong>Notification &amp; quiet hours</strong></p><p class="desc">As specified in FR-NOT-04. Quiet hours respected by both local and server pushes.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-SET-05</span><div class="body"><p><strong>Personas / quick presets</strong></p><p class="desc">Optional preset bundles (e.g. "Foodie", "Road warrior") that adjust default CPP and category weights for what-if comparisons.</p></div><span class="pri could">Could</span></div>
+    <div class="req"><span class="id">FR-SET-06</span><div class="body"><p><strong>Export data</strong></p><p class="desc">User can request a CSV/JSON export of their transactions and computed rewards. Emailed link, expires in 24h.</p></div><span class="pri should">Should</span></div>
+  </section>
+
+  <!-- 13.5 -->
+  <section id="visual">
+    <span class="section-num">13.5 · Visual principles</span>
+    <h2 class="section-title">Anti-loud aesthetic</h2>
+    <p class="section-lede">Color is information, not decoration. The recommended card pops because nothing else does.</p>
+
+    <div class="req"><span class="id">FR-VIS-01</span><div class="body"><p><strong>Monochrome by default</strong></p><p class="desc">Body content, lists, charts and chrome render in ink-on-paper. Accent colors (lemon, mint, coral, sky, plum) are reserved for state — recommendation, on-track, expiring, geo, secondary-accent — never used as decoration.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-VIS-02</span><div class="body"><p><strong>One accent per screen</strong></p><p class="desc">At most one accent color is active in a given view. The recommended card row uses the accent; everything else stays neutral. Lists with multiple recos use accent only on the top pick.</p></div><span class="pri should">Should</span></div>
+    <div class="req"><span class="id">FR-VIS-03</span><div class="body"><p><strong>No gradients, no decorative color</strong></p><p class="desc">Solid fills only. No background gradients, no rainbow charts, no color used purely for visual variety. If a UI element needs to feel different, do it with type, weight, or hairline — not hue.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-VIS-04</span><div class="body"><p><strong>Issuer colors are tertiary</strong></p><p class="desc">Amex, Chase, and Savor brand colors appear only as small inline marks (a 2px stripe, a label dot) — never as fills, backgrounds, or hero treatments. Keeps the editorial palette intact.</p></div><span class="pri must">Must</span></div>
+  </section>
+
+  <!-- 14 -->
+  <section id="privacy">
+    <span class="section-num">14 · Privacy</span>
+    <h2 class="section-title">Privacy, security &amp; compliance</h2>
+    <p class="section-lede">A finance app on iOS lives or dies on this section.</p>
+
+    <div class="req"><span class="id">FR-SEC-01</span><div class="body"><p><strong>Server-only Plaid tokens</strong></p><p class="desc">Plaid <code>access_token</code> never leaves the backend. Encrypted at rest with envelope encryption (KMS-managed key).</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-SEC-02</span><div class="body"><p><strong>TLS &amp; certificate pinning</strong></p><p class="desc">All client↔server traffic over TLS 1.2+. Cert pinning on the mobile client for the API host.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-SEC-03</span><div class="body"><p><strong>Plaid Data Transparency Messaging</strong></p><p class="desc">Use Plaid's verbatim DTM template in onboarding and the App Privacy section.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-SEC-04</span><div class="body"><p><strong>Location data retention</strong></p><p class="desc">Raw lat/lng never persisted server-side. Geofence regions are stored as merchant IDs, not user trails.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-SEC-05</span><div class="body"><p><strong>Account &amp; data deletion</strong></p><p class="desc">In-app deletion path. SLA: Plaid items revoked immediately; user data purged within 30 days; audit log retained 90 days.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-SEC-06</span><div class="body"><p><strong>App Privacy disclosures</strong></p><p class="desc">Apple App Privacy labels accurate to the byte. Financial info, identifiers, location declared with explicit purposes.</p></div><span class="pri must">Must</span></div>
+    <div class="req"><span class="id">FR-SEC-07</span><div class="body"><p><strong>No money movement</strong></p><p class="desc">App copy and metadata never imply funds transfer or account control. Reviewer-facing notes in App Store Connect explicitly state read-only.</p></div><span class="pri must">Must</span></div>
+  </section>
+
+  <!-- 15 -->
+  <section id="nfr">
+    <span class="section-num">15 · Non-functional</span>
+    <h2 class="section-title">Non-functional requirements</h2>
+    <p class="section-lede">Speed, resilience, and the boring things that make the app feel premium.</p>
+
+    <table>
+      <thead><tr><th>Area</th><th>Target</th></tr></thead>
+      <tbody>
+        <tr><td>Cold start to home</td><td>≤ 1.5s on iPhone 14</td></tr>
+        <tr><td>Geofence → notification latency</td><td>≤ 5s p50, ≤ 15s p95</td></tr>
+        <tr><td>Plaid sync end-to-end</td><td>≤ 30s for incremental, ≤ 5m for backfill</td></tr>
+        <tr><td>Engine compute (1k tx)</td><td>≤ 50ms on device</td></tr>
+        <tr><td>Crash-free sessions</td><td>≥ 99.7%</td></tr>
+        <tr><td>API availability</td><td>99.9% monthly</td></tr>
+        <tr><td>Accessibility</td><td>VoiceOver-complete, Dynamic Type up to xxxLarge, contrast AA on all text</td></tr>
+        <tr><td>Localization</td><td>en-US only in v1; copy externalized for future locales</td></tr>
+        <tr><td>Telemetry</td><td>PostHog or equivalent; no PII or transaction amounts in events</td></tr>
+        <tr><td>Logging</td><td>Structured server logs; PII redaction at the edge</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 16 -->
+  <section id="milestones">
+    <span class="section-num">16 · Plan</span>
+    <h2 class="section-title">Milestones &amp; out-of-scope</h2>
+
+    <h3><span class="h3-num">16.1</span>Milestones</h3>
+    <table>
+      <thead><tr><th>Tag</th><th>Cut</th><th>Includes</th></tr></thead>
+      <tbody>
+        <tr><td>M0</td><td>Skeleton</td><td>Auth shell, navigation, mock data, theme tokens, screens 1–5 wired up.</td></tr>
+        <tr><td>M1</td><td>Plaid sandbox</td><td>Link, exchange, sync, categorization, real <code>computeAll</code> on home.</td></tr>
+        <tr><td>M2</td><td>Geo + push</td><td>Geofence enter/exit, local notifications, arrival banner, Live Activity prototype.</td></tr>
+        <tr><td>M3</td><td>Widgets</td><td>WidgetKit target, App Group bridge, all six size variants.</td></tr>
+        <tr><td>M4</td><td>Polish + ship</td><td>Plaid Development → Production, TestFlight, App Privacy review, deletion path.</td></tr>
+      </tbody>
+    </table>
+
+    <h3><span class="h3-num">16.2</span>Out of scope (v1)</h3>
+    <ul>
+      <li>Adding cards beyond the v1 set. The model supports it; the UX doesn't yet.</li>
+      <li>Recommending new cards to apply for.</li>
+      <li>Bill pay, balance transfers, anything that touches money movement.</li>
+      <li>Apple Watch complications, CarPlay, iPad layouts, Android.</li>
+      <li>Shared / household optimization across multiple users.</li>
+    </ul>
+
+    <div class="callout coral" style="margin-top:24px">
+      <span class="tag">Open question</span>
+      <p>Do we want a "decline tracker" — surfacing transactions where the user swiped a sub-optimal card — or is that too judgmental? Pulled from the engine for free; UX call.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>Swipewise · FRD v1.0</span>
+    <span>End of document</span>
+  </footer>
+
+</main>
+</body>
+</html>
