@@ -39,7 +39,7 @@ export default function PlaidConnect({ onConnected }) {
         onClick={() => open()}
         disabled={!ready || busy}
       >
-        {busy ? 'Connecting…' : "Show me my money →"}
+        {busy ? 'Connecting…' : 'Connect a bank'}
       </button>
     </>
   );

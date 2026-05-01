@@ -8,6 +8,18 @@ import InstallPrompt from './components/InstallPrompt.jsx';
 import Recommendations from './components/Recommendations.jsx';
 import Credits from './components/Credits.jsx';
 
+function SectionHead({ eyebrow, title, em, right }) {
+  return (
+    <div className="section-head">
+      <div className="meta">
+        <div className="eyebrow">{eyebrow}</div>
+        <h2>{title}{em && <> <em>{em}</em></>}{title && '.'}</h2>
+      </div>
+      {right && <div className="right">{right}</div>}
+    </div>
+  );
+}
+
 export default function App() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(null);
@@ -62,13 +74,14 @@ export default function App() {
   if (!ready) return <div className="app"><div className="loading">Loading…</div></div>;
 
   const hasAccounts = accounts.length > 0;
+  const userCardCount = (insights?.user_cards || []).length;
 
   return (
     <div className="app">
       <div className="brand">
         <div className="brand-left">
           <div className="brand-mark" />
-          <div className="brand-name">Swipewise</div>
+          <span className="brand-name">Swipewise</span>
         </div>
         <ShareButton />
       </div>
@@ -77,46 +90,69 @@ export default function App() {
 
       {!hasAccounts && (
         <div className="hero">
-          <span className="sparkle s1">✦</span>
-          <span className="sparkle s2">✦</span>
-          <h1>
-            Your wallet<br/>
-            just got<br/>
-            <span className="pop">opinionated.</span>
-          </h1>
+          <div className="eyebrow">Welcome</div>
+          <h1>The smartest <em>card</em> to swipe.</h1>
           <p>
-            Know which card to swipe, <i>before</i> you swipe it. We track your rewards, credits, and every coffee you forget to optimize.
+            Connect once. We'll quietly tell you which card to use — and what you've been <b>leaving on the table</b>.
           </p>
+          <PlaidConnect onConnected={refresh} />
         </div>
       )}
 
       {error && <div className="error">{error}</div>}
 
-      {!hasAccounts && (
-        <div className="card">
-          <h2>Get started</h2>
-          <PlaidConnect onConnected={refresh} />
-        </div>
+      {hasAccounts && (
+        <>
+          <SectionHead
+            eyebrow={`Reflective · last 30 days`}
+            title="What you've been"
+            em="leaving on the table"
+            right={null}
+          />
+          <Insights data={insights} />
+        </>
       )}
 
-      {hasAccounts && <Insights data={insights} />}
+      {hasAccounts && userCardCount > 0 && (
+        <>
+          <SectionHead
+            eyebrow="Agent recommendations"
+            title="Cards worth"
+            em="applying for"
+            right={null}
+          />
+          <Recommendations data={recommendations} allCards={cards} />
+        </>
+      )}
 
-      {hasAccounts && <Recommendations data={recommendations} allCards={cards} />}
-
-      {hasAccounts && <Credits userCards={insights?.user_cards || []} />}
-
-      {hasAccounts && (
-        <div className="card">
-          <h2>Your accounts</h2>
-          <AccountList accounts={accounts} cards={cards} onChange={refresh} />
-        </div>
+      {hasAccounts && userCardCount > 0 && (
+        <>
+          <SectionHead
+            eyebrow="Benefits · annual"
+            title="Credits &"
+            em="perks"
+          />
+          <Credits userCards={insights?.user_cards || []} />
+        </>
       )}
 
       {hasAccounts && (
-        <div className="card">
-          <h2>Add another bank</h2>
+        <>
+          <SectionHead
+            eyebrow="Setup"
+            title="Your"
+            em="accounts"
+          />
+          <div className="card">
+            <AccountList accounts={accounts} cards={cards} onChange={refresh} />
+          </div>
+        </>
+      )}
+
+      {hasAccounts && (
+        <div className="card" style={{ marginTop: 12 }}>
           <PlaidConnect onConnected={refresh} />
-          <div style={{ height: 8 }} />
+          <div style={{ height: 10 }} />
           <button className="btn secondary" onClick={manualSync} disabled={syncing}>
             {syncing ? 'Syncing…' : 'Sync transactions'}
           </button>

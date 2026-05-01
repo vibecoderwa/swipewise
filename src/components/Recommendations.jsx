@@ -15,16 +15,15 @@ function ConfidenceBadge({ level }) {
 export default function Recommendations({ data, allCards = [] }) {
   const cardById = Object.fromEntries(allCards.map(c => [c.id, c]));
   const [expanded, setExpanded] = useState(null);
+
   if (!data) return null;
 
   if (!data.sufficient_data) {
     return (
       <div className="card">
-        <h2>Card recommendations</h2>
-        <div className="muted small">
-          We need a bit more transaction history to make solid recommendations
-          (currently {data.transaction_count} transactions). Sync again in a few
-          days as more transactions roll in.
+        <div className="metric-eyebrow">Need more data</div>
+        <div className="metric-sub" style={{ marginTop: 8 }}>
+          Sync a few more days of transactions and we'll surface cards worth applying for ({data.transaction_count} so far).
         </div>
       </div>
     );
@@ -33,10 +32,9 @@ export default function Recommendations({ data, allCards = [] }) {
   if (data.recommendations.length === 0) {
     return (
       <div className="card">
-        <h2>Card recommendations</h2>
-        <div className="muted small">
-          Based on your spending, your current cards already cover you well —
-          no card we know of would meaningfully improve your rewards after fees.
+        <div className="metric-eyebrow">All set</div>
+        <div className="metric-sub" style={{ marginTop: 8 }}>
+          Based on your spending, your current cards already cover you well — no card we know of would meaningfully improve rewards after fees.
         </div>
       </div>
     );
@@ -44,12 +42,10 @@ export default function Recommendations({ data, allCards = [] }) {
 
   return (
     <div className="card">
-      <h2>Cards you should apply for</h2>
-      <div className="muted small" style={{ marginBottom: 12 }}>
-        Estimated extra rewards per year, after annual fee, based on your last{' '}
-        {data.days_of_data} days of spending.
+      <div className="muted small" style={{ marginBottom: 14, fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 14 }}>
+        Estimated extra rewards per year, after annual fee, from your last {data.days_of_data} days of spending.
       </div>
-      {data.recommendations.map((r, i) => (
+      {data.recommendations.map((r) => (
         <div className="rec" key={r.card_id}>
           <div className="rec-row">
             <CardArt card={cardById[r.card_id] || { id: r.card_id, name: r.card_name, issuer: r.issuer }} size="md" />
@@ -58,10 +54,10 @@ export default function Recommendations({ data, allCards = [] }) {
                 {r.card_name}
                 <ConfidenceBadge level={r.confidence} />
               </div>
-              <div className="rec-headline muted small">{r.headline}</div>
+              <div className="rec-headline">{r.headline}</div>
             </div>
             <div className="rec-value">
-              <div className="rec-net">+${Math.round(r.net_value)}</div>
+              <div className="rec-net"><span className="sign">+</span>${Math.round(r.net_value)}</div>
               <div className="rec-fee">/yr{r.annual_fee > 0 ? ` · $${r.annual_fee} fee` : ''}</div>
             </div>
           </div>
@@ -83,7 +79,7 @@ export default function Recommendations({ data, allCards = [] }) {
                   </span>
                 </div>
               ))}
-              <div className="muted small" style={{ marginTop: 8 }}>
+              <div className="muted small" style={{ marginTop: 10 }}>
                 Annual fee: ${r.annual_fee} · Gross extra: ${Math.round(r.annual_extra_rewards)}/yr
               </div>
             </div>
