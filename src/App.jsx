@@ -1,24 +1,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from './lib/api.js';
-import PlaidConnect from './components/PlaidConnect.jsx';
-import AccountList from './components/AccountList.jsx';
-import Insights from './components/Insights.jsx';
-import ShareButton from './components/ShareButton.jsx';
+import TabBar from './components/TabBar.jsx';
 import InstallPrompt from './components/InstallPrompt.jsx';
-import Recommendations from './components/Recommendations.jsx';
-import Credits from './components/Credits.jsx';
+import HomeScreen from './screens/Home.jsx';
+import CategoriesScreen from './screens/Categories.jsx';
+import ApplyScreen from './screens/Apply.jsx';
+import CreditsScreen from './screens/CreditsScreen.jsx';
+import SettingsScreen from './screens/Settings.jsx';
 
-function SectionHead({ eyebrow, title, em, right }) {
-  return (
-    <div className="section-head">
-      <div className="meta">
-        <div className="eyebrow">{eyebrow}</div>
-        <h2>{title}{em && <> <em>{em}</em></>}{title && '.'}</h2>
-      </div>
-      {right && <div className="right">{right}</div>}
-    </div>
-  );
-}
+const TAB_KEY = 'swipewise_tab';
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -28,6 +18,9 @@ export default function App() {
   const [insights, setInsights] = useState(null);
   const [recommendations, setRecommendations] = useState(null);
   const [syncing, setSyncing] = useState(false);
+  const [tab, setTab] = useState(() => localStorage.getItem(TAB_KEY) || 'home');
+
+  useEffect(() => { localStorage.setItem(TAB_KEY, tab); }, [tab]);
 
   const refresh = useCallback(async () => {
     try {
@@ -61,6 +54,7 @@ export default function App() {
 
   async function manualSync() {
     setSyncing(true);
+    setError(null);
     try {
       await api.sync();
       await refresh();
@@ -71,93 +65,47 @@ export default function App() {
     }
   }
 
-  if (!ready) return <div className="app"><div className="loading">Loading…</div></div>;
+  if (!ready) {
+    return (
+      <div className="app">
+        <div className="screen"><div className="loading">Loading…</div></div>
+      </div>
+    );
+  }
 
   const hasAccounts = accounts.length > 0;
-  const userCardCount = (insights?.user_cards || []).length;
 
   return (
     <div className="app">
-      <div className="brand">
-        <div className="brand-left">
-          <div className="brand-mark" />
-          <span className="brand-name">Swipewise</span>
-        </div>
-        <ShareButton />
-      </div>
-
-      <InstallPrompt />
-
-      {!hasAccounts && (
-        <div className="hero">
-          <div className="eyebrow">Welcome</div>
-          <h1>The smartest <em>card</em> to swipe.</h1>
-          <p>
-            Connect once. We'll quietly tell you which card to use — and what you've been <b>leaving on the table</b>.
-          </p>
-          <PlaidConnect onConnected={refresh} />
-        </div>
-      )}
-
-      {error && <div className="error">{error}</div>}
-
-      {hasAccounts && (
+      {tab === 'home' && (
         <>
-          <SectionHead
-            eyebrow={`Reflective · last 30 days`}
-            title="What you've been"
-            em="leaving on the table"
-            right={null}
+          {!hasAccounts && <div className="screen"><InstallPrompt /></div>}
+          <HomeScreen
+            hasAccounts={hasAccounts}
+            insights={insights}
+            error={error}
+            onConnected={refresh}
           />
-          <Insights data={insights} />
         </>
       )}
 
-      {hasAccounts && userCardCount > 0 && (
-        <>
-          <SectionHead
-            eyebrow="Agent recommendations"
-            title="Cards worth"
-            em="applying for"
-            right={null}
-          />
-          <Recommendations data={recommendations} allCards={cards} />
-        </>
+      {tab === 'cats' && <CategoriesScreen insights={insights} />}
+
+      {tab === 'apply' && <ApplyScreen recommendations={recommendations} cards={cards} />}
+
+      {tab === 'credits' && <CreditsScreen insights={insights} />}
+
+      {tab === 'settings' && (
+        <SettingsScreen
+          accounts={accounts}
+          cards={cards}
+          syncing={syncing}
+          onSync={manualSync}
+          onChange={refresh}
+        />
       )}
 
-      {hasAccounts && userCardCount > 0 && (
-        <>
-          <SectionHead
-            eyebrow="Benefits · annual"
-            title="Credits &"
-            em="perks"
-          />
-          <Credits userCards={insights?.user_cards || []} />
-        </>
-      )}
-
-      {hasAccounts && (
-        <>
-          <SectionHead
-            eyebrow="Setup"
-            title="Your"
-            em="accounts"
-          />
-          <div className="card">
-            <AccountList accounts={accounts} cards={cards} onChange={refresh} />
-          </div>
-        </>
-      )}
-
-      {hasAccounts && (
-        <div className="card" style={{ marginTop: 12 }}>
-          <PlaidConnect onConnected={refresh} />
-          <div style={{ height: 10 }} />
-          <button className="btn secondary" onClick={manualSync} disabled={syncing}>
-            {syncing ? 'Syncing…' : 'Sync transactions'}
-          </button>
-        </div>
-      )}
+      <TabBar active={tab} onChange={setTab} />
     </div>
   );
 }

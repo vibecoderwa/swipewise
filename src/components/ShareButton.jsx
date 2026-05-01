@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function ShareButton() {
+export default function ShareButton({ fullWidth = false }) {
   const [copied, setCopied] = useState(false);
 
   async function onClick() {
@@ -27,6 +27,13 @@ export default function ShareButton() {
     }
   }
 
+  if (fullWidth) {
+    return (
+      <button className="btn secondary" onClick={onClick} aria-label="Share Swipewise">
+        {copied ? 'Copied to clipboard ✓' : 'Share Swipewise'}
+      </button>
+    );
+  }
   return (
     <button className="brand-action" onClick={onClick} aria-label="Share Swipewise">
       <span>{copied ? 'Copied!' : 'Share'}</span>
