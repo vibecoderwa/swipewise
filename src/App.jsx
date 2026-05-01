@@ -4,7 +4,7 @@ import TabBar from './components/TabBar.jsx';
 import InstallPrompt from './components/InstallPrompt.jsx';
 import HomeScreen from './screens/Home.jsx';
 import CategoriesScreen from './screens/Categories.jsx';
-import ApplyScreen from './screens/Apply.jsx';
+import AnalyticsScreen from './screens/Analytics.jsx';
 import CreditsScreen from './screens/CreditsScreen.jsx';
 import SettingsScreen from './screens/Settings.jsx';
 
@@ -78,20 +78,19 @@ export default function App() {
   return (
     <div className="app">
       {tab === 'home' && (
-        <>
-          {!hasAccounts && <div className="screen"><InstallPrompt /></div>}
-          <HomeScreen
-            hasAccounts={hasAccounts}
-            insights={insights}
-            error={error}
-            onConnected={refresh}
-          />
-        </>
+        <HomeScreen
+          hasAccounts={hasAccounts}
+          insights={insights}
+          error={error}
+          onConnected={refresh}
+        />
       )}
 
       {tab === 'cats' && <CategoriesScreen insights={insights} />}
 
-      {tab === 'apply' && <ApplyScreen recommendations={recommendations} cards={cards} />}
+      {tab === 'analytics' && (
+        <AnalyticsScreen insights={insights} recommendations={recommendations} cards={cards} />
+      )}
 
       {tab === 'credits' && <CreditsScreen insights={insights} />}
 
