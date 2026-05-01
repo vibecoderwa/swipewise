@@ -77,8 +77,16 @@ export default function App() {
 
       {!hasAccounts && (
         <div className="hero">
-          <h1>The smartest <em>card</em> to swipe.</h1>
-          <p>Connect once. We'll quietly tell you which card to use — and what you've been leaving on the table.</p>
+          <span className="sparkle s1">✦</span>
+          <span className="sparkle s2">✦</span>
+          <h1>
+            Your wallet<br/>
+            just got<br/>
+            <span className="pop">opinionated.</span>
+          </h1>
+          <p>
+            Know which card to swipe, <i>before</i> you swipe it. We track your rewards, credits, and every coffee you forget to optimize.
+          </p>
         </div>
       )}
 
