@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { api, clearSession } from './lib/api.js';
 import TabBar from './components/TabBar.jsx';
 import HomeScreen from './screens/Home.jsx';
@@ -40,6 +40,41 @@ export default function App() {
 
   useEffect(() => { localStorage.setItem(TAB_KEY, tab); }, [tab]);
   useEffect(() => { localStorage.setItem(STAGE_KEY, stage); }, [stage]);
+
+  // ─── Browser/iOS back-gesture support for in-app tab navigation ───
+  // We push a history entry on every tab change while in the main app, and
+  // listen for popstate so the iPhone swipe-back gesture / browser back button
+  // walks the user through their tab history (and eventually out of the app).
+  const fromPopRef = useRef(false);
+  useEffect(() => {
+    if (stage !== 'app') return;
+    // Anchor Home as the bottom of our back stack so back from any other tab
+    // (even a deep-link / restored tab) lands on Home, not out of the SPA.
+    window.history.replaceState({ swipewise: true, tab: 'home' }, '');
+    if (tab !== 'home') {
+      window.history.pushState({ swipewise: true, tab }, '');
+    }
+    const onPop = (e) => {
+      const t = e.state?.swipewise ? e.state.tab : 'home';
+      fromPopRef.current = true;
+      setTab(t || 'home');
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage]);
+
+  useEffect(() => {
+    if (stage !== 'app') return;
+    if (fromPopRef.current) { fromPopRef.current = false; return; }
+    // User-initiated tab change — push so back can return to the prior tab.
+    window.history.pushState({ swipewise: true, tab }, '');
+  }, [tab, stage]);
+
+  const goHome = useCallback(() => {
+    if (tab === 'home') return;
+    window.history.back();
+  }, [tab]);
 
   const refresh = useCallback(async () => {
     try {
@@ -168,13 +203,18 @@ export default function App() {
         />
       )}
 
-      {tab === 'cats' && <CategoriesScreen insights={insights} />}
+      {tab === 'cats' && <CategoriesScreen insights={insights} onBack={goHome} />}
 
       {tab === 'analytics' && (
-        <AnalyticsScreen insights={insights} recommendations={recommendations} cards={cards} />
+        <AnalyticsScreen
+          insights={insights}
+          recommendations={recommendations}
+          cards={cards}
+          onBack={goHome}
+        />
       )}
 
-      {tab === 'credits' && <CreditsScreen insights={insights} />}
+      {tab === 'credits' && <CreditsScreen insights={insights} onBack={goHome} />}
 
       {tab === 'settings' && (
         <SettingsScreen
@@ -184,6 +224,7 @@ export default function App() {
           onSync={manualSync}
           onChange={refresh}
           onSignOut={handleSignOut}
+          onBack={goHome}
         />
       )}
 

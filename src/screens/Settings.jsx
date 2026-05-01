@@ -4,12 +4,12 @@ import PlaidConnect from '../components/PlaidConnect.jsx';
 import ShareButton from '../components/ShareButton.jsx';
 import { api } from '../lib/api.js';
 
-export default function SettingsScreen({ accounts, cards, syncing, onSync, onChange, onSignOut }) {
+export default function SettingsScreen({ accounts, cards, syncing, onSync, onChange, onSignOut, onBack }) {
   const phone = api.getPhone();
 
   return (
     <div className="screen">
-      <ScreenHeader eyebrow="Preferences" title="Settings" />
+      <ScreenHeader eyebrow="Preferences" title="Settings" onBack={onBack} />
 
       <div className="card">
         <h2>My accounts</h2>

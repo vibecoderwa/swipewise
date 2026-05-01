@@ -150,6 +150,23 @@ body {
 
 /* ─── Screen header — mono eyebrow + display title ─── */
 .screen-header { margin-bottom: 22px; position: relative; }
+.screen-header.with-back { padding-left: 40px; }
+.header-back {
+  position: absolute;
+  left: 0; top: -2px;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  font-size: 22px; line-height: 1;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 1.5px 1.5px 0 0 var(--ink);
+  padding: 0 0 2px 0;
+  font-family: var(--font-mono);
+}
+.header-back:active { transform: translate(1px, 1px); box-shadow: 0 0 0 0 var(--ink); }
 .screen-header .eyebrow {
   font-family: var(--font-mono);
   font-size: 11px;

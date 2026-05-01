@@ -18,14 +18,14 @@ function brandKey(card) {
   return 'default';
 }
 
-export default function AnalyticsScreen({ insights, recommendations, cards }) {
+export default function AnalyticsScreen({ insights, recommendations, cards, onBack }) {
   if (!insights) return <div className="screen"><div className="loading">Loading…</div></div>;
   const { transactions, total_missed_rewards, user_cards } = insights;
 
   if (!user_cards.length) {
     return (
       <div className="screen">
-        <ScreenHeader eyebrow="This year" title="Analytics" />
+        <ScreenHeader eyebrow="This year" title="Analytics" onBack={onBack} />
         <div className="card">
           <div className="metric-sub">
             Match your accounts to real cards in <b>Settings</b> first.
@@ -37,7 +37,7 @@ export default function AnalyticsScreen({ insights, recommendations, cards }) {
 
   return (
     <div className="screen">
-      <ScreenHeader eyebrow="This year" title="Analytics" />
+      <ScreenHeader eyebrow="This year" title="Analytics" onBack={onBack} />
 
       {/* Missed-rewards hero */}
       <div className="card">

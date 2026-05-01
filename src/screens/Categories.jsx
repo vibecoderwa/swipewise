@@ -21,14 +21,14 @@ function brandKey(cardId) {
   return 'dim';
 }
 
-export default function CategoriesScreen({ insights }) {
+export default function CategoriesScreen({ insights, onBack }) {
   if (!insights) return <div className="screen"><div className="loading">Loading…</div></div>;
   const { best_by_category, user_cards } = insights;
 
   if (!user_cards.length) {
     return (
       <div className="screen">
-        <ScreenHeader eyebrow="Spending" title="Categories" />
+        <ScreenHeader eyebrow="Spending" title="Categories" onBack={onBack} />
         <div className="card">
           <div className="metric-sub">
             Match your accounts to real cards in <b>Settings</b> first.
@@ -46,7 +46,7 @@ export default function CategoriesScreen({ insights }) {
 
   return (
     <div className="screen">
-      <ScreenHeader eyebrow="Spending" title="Categories" />
+      <ScreenHeader eyebrow="Spending" title="Categories" onBack={onBack} />
       <div className="card">
         <div className="muted small" style={{ marginBottom: 8, fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 14 }}>
           The card that earns most per dollar in each category — across the cards you own.
