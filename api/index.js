@@ -6,7 +6,7 @@ import { dirname, join } from 'path';
 import { existsSync } from 'fs';
 import crypto from 'crypto';
 
-import { db, getOrCreateUser } from './db.js';
+import { db, getOrCreateUser, findUserByPhone, setUserPhone } from './db.js';
 import { plaidClient, PLAID_PRODUCTS, PLAID_COUNTRY_CODES } from './plaid.js';
 import { CARDS, categoryFromPlaid, rewardRate, bestCardFor, matchCardFromAccount } from './cards.js';
 import { recommendCards } from './recommendations.js';
@@ -31,7 +31,96 @@ app.get('/api/health', (_req, res) => {
 
 app.get('/api/me', (req, res) => {
   const userId = getUserId(req);
-  res.json({ userId });
+  const u = db.prepare('SELECT id, phone FROM users WHERE id = ?').get(userId);
+  res.json({ userId, phone: u?.phone || null });
+});
+
+// ─── Auth — phone + OTP (mock) ───────────────────────────────
+// Prototype-grade: doesn't send real SMS. Any 6-digit code verifies.
+// On send, we look up or create a user keyed by phone, and issue
+// a mock code (always "421906" in non-production for easy demoing).
+app.post('/api/auth/otp/send', (req, res) => {
+  const { phone } = req.body || {};
+  if (!phone || !/^\+?[\d\s().-]{7,}$/.test(phone)) {
+    return res.status(400).json({ error: 'phone required' });
+  }
+  const normalized = phone.replace(/[^\d+]/g, '');
+
+  let user = findUserByPhone(normalized);
+  if (!user) {
+    const newId = crypto.randomUUID();
+    getOrCreateUser(newId);
+    setUserPhone(newId, normalized);
+    user = { id: newId };
+  }
+
+  const code = process.env.NODE_ENV === 'production'
+    ? String(Math.floor(100000 + Math.random() * 900000))
+    : '421906';
+  const expiresAt = Date.now() + 10 * 60 * 1000;
+
+  db.prepare(`INSERT INTO auth_otps (phone, user_id, code, expires_at, attempts)
+              VALUES (?, ?, ?, ?, 0)
+              ON CONFLICT(phone) DO UPDATE SET
+                user_id = excluded.user_id,
+                code = excluded.code,
+                expires_at = excluded.expires_at,
+                attempts = 0`)
+    .run(normalized, user.id, code, expiresAt);
+
+  res.json({
+    sent: true,
+    // For prototype convenience we surface the code in non-prod so the
+    // user can demo the flow without a real SMS provider wired up.
+    demo_code: process.env.NODE_ENV === 'production' ? undefined : code,
+  });
+});
+
+app.post('/api/auth/otp/verify', (req, res) => {
+  const { phone, code } = req.body || {};
+  if (!phone || !code) return res.status(400).json({ error: 'phone and code required' });
+  const normalized = phone.replace(/[^\d+]/g, '');
+
+  const otp = db.prepare('SELECT * FROM auth_otps WHERE phone = ?').get(normalized);
+  if (!otp) return res.status(400).json({ error: 'No code requested for this number' });
+  if (otp.expires_at < Date.now()) return res.status(400).json({ error: 'Code expired — request a new one' });
+  if (otp.attempts >= 5) return res.status(429).json({ error: 'Too many attempts. Request a new code.' });
+
+  db.prepare('UPDATE auth_otps SET attempts = attempts + 1 WHERE phone = ?').run(normalized);
+
+  if (String(code).trim() !== otp.code) {
+    return res.status(400).json({ error: 'Wrong code — try again' });
+  }
+
+  // Burn the OTP after success.
+  db.prepare('DELETE FROM auth_otps WHERE phone = ?').run(normalized);
+  res.json({ user_id: otp.user_id, phone: normalized });
+});
+
+// ─── Manual card catalog selection (FR-ONB-02) ───────────────
+app.get('/api/manual_cards', (req, res) => {
+  const userId = getUserId(req);
+  const rows = db.prepare('SELECT card_id FROM manual_cards WHERE user_id = ?').all(userId);
+  const cards = rows.map(r => CARDS.find(c => c.id === r.card_id)).filter(Boolean);
+  res.json({ cards });
+});
+
+app.post('/api/manual_cards', (req, res) => {
+  const userId = getUserId(req);
+  const { card_ids } = req.body || {};
+  if (!Array.isArray(card_ids)) return res.status(400).json({ error: 'card_ids[] required' });
+  const known = new Set(CARDS.map(c => c.id));
+  const valid = card_ids.filter(id => known.has(id));
+
+  const tx = db.transaction((ids) => {
+    db.prepare('DELETE FROM manual_cards WHERE user_id = ?').run(userId);
+    const ins = db.prepare('INSERT INTO manual_cards (user_id, card_id, added_at) VALUES (?, ?, ?)');
+    const now = Date.now();
+    for (const id of ids) ins.run(userId, id, now);
+  });
+  tx(valid);
+
+  res.json({ ok: true, count: valid.length });
 });
 
 app.post('/api/plaid/link_token', async (req, res) => {
@@ -155,11 +244,18 @@ app.get('/api/cards', (_req, res) => {
 });
 
 function userCards(userId) {
-  const rows = db.prepare(`
+  const plaidRows = db.prepare(`
     SELECT DISTINCT matched_card_id FROM accounts
     WHERE user_id = ? AND matched_card_id IS NOT NULL
   `).all(userId);
-  return rows.map(r => CARDS.find(c => c.id === r.matched_card_id)).filter(Boolean);
+  const manualRows = db.prepare(`
+    SELECT card_id FROM manual_cards WHERE user_id = ?
+  `).all(userId);
+  const ids = new Set([
+    ...plaidRows.map(r => r.matched_card_id),
+    ...manualRows.map(r => r.card_id),
+  ]);
+  return [...ids].map(id => CARDS.find(c => c.id === id)).filter(Boolean);
 }
 
 app.get('/api/insights', (req, res) => {

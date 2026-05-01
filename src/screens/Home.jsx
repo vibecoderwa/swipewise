@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PlaidConnect from '../components/PlaidConnect.jsx';
 import CardArt from '../components/CardArt.jsx';
 import { inferCategory, categoryLabel, bestCardFor, QUICK_MERCHANTS } from '../lib/merchantInfer.js';
+import { rankMerchants, distanceLabel } from '../lib/nearby.js';
 
 function brandKey(card) {
   if (!card) return 'default';
@@ -13,29 +14,60 @@ function brandKey(card) {
   return 'default';
 }
 
+function multLabel(card, rate) {
+  // Cash-back cards (no point system) read as "%"; points cards as "×".
+  const issuerName = (card?.issuer || '').toLowerCase();
+  const isPoints = card && (issuerName.includes('chase') || issuerName.includes('american express') || issuerName.includes('capital one'));
+  return isPoints ? `${rate}×` : `${rate}%`;
+}
+
+function expectedUplift(card, baseline, rate, basket) {
+  // FR-ENG-07 basket-aware uplift estimate (simplified).
+  // Estimates extra reward dollars for using `card` at `rate` vs. a 1% baseline.
+  const cppCash = 0.01; // 1¢/pt for points cards as a v1 default — the design brief calls out CPP overrides in settings.
+  const uplift = Math.max(0, (rate - baseline) / 100 * basket);
+  // For points, treat 1 point ≈ 1 cent for the back-of-envelope dollar number.
+  return uplift * (cppCash / 0.01);
+}
+
+function confidenceLevel(top, second) {
+  if (!top) return 'low';
+  if (!second) return 'high';
+  const gap = (top.rate || 1) - (second.rate || 1);
+  if (gap >= 2) return 'high';
+  if (gap >= 1) return 'medium';
+  return 'low';
+}
+
+function ConfidenceDots({ level }) {
+  const lit = level === 'high' ? 3 : level === 'medium' ? 2 : 1;
+  return (
+    <span className="conf" title={`${level} confidence`}>
+      {[0,1,2].map(i => <span key={i} className={`conf-dot ${i < lit ? 'on' : ''}`} />)}
+    </span>
+  );
+}
+
 export default function HomeScreen({ hasAccounts, insights, error, onConnected }) {
-  const [query, setQuery] = useState('');
   const userCards = insights?.user_cards || [];
+  const [query, setQuery] = useState('');
+  const [userLoc, setUserLoc] = useState(null);
+  const [locStatus, setLocStatus] = useState('idle'); // 'idle' | 'pending' | 'granted' | 'denied'
+  const [openMerchant, setOpenMerchant] = useState(null);
 
-  const trimmed = query.trim();
-  const category = trimmed ? inferCategory(trimmed) : null;
-  const recommendation = (category && userCards.length) ? bestCardFor(category, userCards) : null;
+  const ranked = useMemo(() => {
+    if (userCards.length === 0) return [];
+    return rankMerchants(userLoc).map(m => {
+      const top = bestCardFor(m.category, userCards);
+      const rest = userCards.filter(c => c.id !== top?.card.id);
+      const runner = rest.length ? bestCardFor(m.category, rest) : null;
+      const uplift = top ? expectedUplift(top.card, runner?.rate ?? 1, top.rate, m.basket) : 0;
+      const level = confidenceLevel(top, runner);
+      return { ...m, top, runner, uplift, level };
+    });
+  }, [userCards, userLoc]);
 
-  function detectLocation() {
-    if (!navigator.geolocation) {
-      alert('Geolocation isn\'t supported on this device. Type a store name below.');
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      () => alert('Got your location. Merchant lookup is coming soon — for now, type the store name below.'),
-      (err) => alert(err.code === err.PERMISSION_DENIED
-        ? 'Location permission denied. Type the store name below.'
-        : 'Couldn\'t get your location. Type the store name below.'),
-      { timeout: 6000 }
-    );
-  }
-
-  // First-run state — no accounts connected
+  // First-run state — no cards yet.
   if (!hasAccounts) {
     return (
       <div className="screen">
@@ -44,20 +76,42 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected }
           <span>Swipewise</span>
         </div>
         <h1 className="hero-q">
-          Which card should<br/>
-          I use <em>right now</em>?
+          Your wallet<br/>
+          just got<br/>
+          <span className="accent">opinionated.</span>
         </h1>
         <p className="hero-q-sub">
-          Connect your cards to start. Then we'll tell you which one to swipe — every time.
+          Bring your wallet, not your card numbers. We read which cards you have and
+          tell you which to swipe — <i>before</i> you swipe it.
         </p>
         {error && <div className="error">{error}</div>}
         <PlaidConnect onConnected={onConnected} />
         <div className="hero-q-secondary">
-          Read-only · Plaid-secured · no card numbers stored.
+          Read-only · Plaid-secured · no card numbers stored
         </div>
       </div>
     );
   }
+
+  function detectLocation() {
+    if (!navigator.geolocation) {
+      setLocStatus('denied');
+      return;
+    }
+    setLocStatus('pending');
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocStatus('granted');
+      },
+      () => setLocStatus('denied'),
+      { timeout: 6000 }
+    );
+  }
+
+  const trimmed = query.trim();
+  const searchCategory = trimmed ? inferCategory(trimmed) : null;
+  const searchReco = (searchCategory && userCards.length) ? bestCardFor(searchCategory, userCards) : null;
 
   return (
     <div className="screen">
@@ -66,29 +120,72 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected }
         <span>Swipewise</span>
       </div>
 
-      <h1 className="hero-q">
-        Which card should<br/>
-        I use <em>right now</em><span className="q-mark">?</span>
+      <div className="geo-eyebrow">
+        <span className={`geo-dot ${locStatus === 'granted' ? 'on' : ''}`} />
+        {locStatus === 'granted' ? 'Near you · live' : 'Near you · sample'}
+      </div>
+      <h1 className="hero-q" style={{ marginTop: 8 }}>
+        {ranked.length === 0
+          ? <>Match a card<br/>to get going.</>
+          : <>{ranked.length} places.<br/><em>{ranked.length} smart swipes.</em></>}
       </h1>
       <p className="hero-q-sub">
-        Detect your location or type a store name to get an instant card recommendation.
+        Tap a place to see why. Or grant location to re-rank by distance.
       </p>
 
       {error && <div className="error">{error}</div>}
 
-      <button className="btn pin-btn" onClick={detectLocation}>
-        <span className="pin-icon">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22s7-7 7-13a7 7 0 1 0-14 0c0 6 7 13 7 13z"/>
-            <circle cx="12" cy="9" r="2.5"/>
-          </svg>
-        </span>
-        Detect My Location
-      </button>
+      {locStatus !== 'granted' && (
+        <button className="btn pin-btn" onClick={detectLocation} disabled={locStatus === 'pending'}>
+          <span className="pin-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s7-7 7-13a7 7 0 1 0-14 0c0 6 7 13 7 13z"/>
+              <circle cx="12" cy="9" r="2.5"/>
+            </svg>
+          </span>
+          {locStatus === 'pending' ? 'Locating…' : 'Detect my location'}
+        </button>
+      )}
+      {locStatus === 'denied' && (
+        <div className="hero-q-secondary" style={{ textAlign: 'left', marginTop: 10 }}>
+          Location denied — list shown is a sample.
+        </div>
+      )}
 
-      <div className="or-divider"><span>or</span></div>
+      {ranked.length > 0 && (
+        <div className="merchants-list">
+          {ranked.map((m, i) => {
+            const card = m.top?.card;
+            const dLabel = distanceLabel(userLoc, m);
+            const isAccent = i === 0; // FR-VIS-02: only the top pick gets the accent
+            return (
+              <button
+                key={m.id}
+                className={`merchant-row ${isAccent ? 'accent' : ''} ${brandKey(card)}`}
+                onClick={() => setOpenMerchant(m)}
+              >
+                <div className="merchant-icon">{m.icon}</div>
+                <div className="merchant-text">
+                  <div className="merchant-name">{m.name}</div>
+                  <div className="merchant-sub">{m.sub}{dLabel ? ` · ${dLabel}` : ''}</div>
+                </div>
+                <div className="merchant-right">
+                  <div className="merchant-mult">
+                    <span className={`chip chip-sm ${brandKey(card)}`} aria-hidden="true" />
+                    <span className="merchant-rate">{m.top ? multLabel(card, m.top.rate) : '—'}</span>
+                  </div>
+                  <div className="merchant-uplift">
+                    {m.uplift > 0 ? `+$${m.uplift.toFixed(m.uplift < 1 ? 2 : (m.uplift < 10 ? 2 : 0))}` : ''}
+                    <ConfidenceDots level={m.level} />
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
-      <div className="metric-eyebrow" style={{ marginBottom: 8 }}>Simulate store name</div>
+      <div className="or-divider"><span>or type a store</span></div>
 
       <div className="search-box">
         <span className="search-icon">
@@ -116,31 +213,26 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected }
         </div>
       )}
 
-      <ResultBox
-        query={trimmed}
-        category={category}
-        recommendation={recommendation}
-        hasMatchedCards={userCards.length > 0}
-      />
+      {trimmed && (
+        <SearchResult
+          query={trimmed}
+          category={searchCategory}
+          recommendation={searchReco}
+          hasMatchedCards={userCards.length > 0}
+        />
+      )}
+
+      {openMerchant && (
+        <ArrivalDetail
+          merchant={openMerchant}
+          onClose={() => setOpenMerchant(null)}
+        />
+      )}
     </div>
   );
 }
 
-function ResultBox({ query, category, recommendation, hasMatchedCards }) {
-  if (!query) {
-    return (
-      <div className="result-empty">
-        <div className="result-empty-icon">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="6" width="18" height="13" rx="2" />
-            <path d="M3 11h18M7 15h4" />
-          </svg>
-        </div>
-        <div>Your card recommendation will appear here</div>
-      </div>
-    );
-  }
-
+function SearchResult({ query, category, recommendation, hasMatchedCards }) {
   if (!hasMatchedCards) {
     return (
       <div className="result-empty">
@@ -148,7 +240,6 @@ function ResultBox({ query, category, recommendation, hasMatchedCards }) {
       </div>
     );
   }
-
   if (!recommendation) {
     return (
       <div className="result-empty">
@@ -158,8 +249,6 @@ function ResultBox({ query, category, recommendation, hasMatchedCards }) {
   }
 
   const brand = brandKey(recommendation.card);
-  const rate = recommendation.rate;
-
   return (
     <div className={`result-card ${brand}`}>
       <CardArt card={recommendation.card} size="md" />
@@ -167,8 +256,68 @@ function ResultBox({ query, category, recommendation, hasMatchedCards }) {
         <div className="result-eyebrow">Use this card</div>
         <div className="result-name">{recommendation.card.name}</div>
         <div className="result-headline">
-          <span className="big-rate">{rate}<span className="x">×</span></span>{' '}
+          <span className="big-rate">{recommendation.rate}<span className="x">×</span></span>{' '}
           <span className="result-cat">{categoryLabel(category)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Merchant arrival detail — visual reference: mocks/geo.jsx · GeoB_Banner.
+function ArrivalDetail({ merchant, onClose }) {
+  const { name, sub, top, runner, uplift } = merchant;
+  if (!top) return null;
+  const card = top.card;
+  return (
+    <div className="arrival-overlay" onClick={onClose}>
+      <div className="arrival-sheet" onClick={e => e.stopPropagation()}>
+        <button className="arrival-close" onClick={onClose} aria-label="Close">×</button>
+
+        <div className="arrival-banner">
+          <div className="arrival-pin">📍</div>
+          <div>
+            <div className="arrival-eyebrow">You're at</div>
+            <div className="arrival-merchant">{name}</div>
+          </div>
+        </div>
+
+        <div className="arrival-body">
+          <div className="arrival-section-label">Swipe this one</div>
+          <div className={`arrival-card ${brandKey(card)}`}>
+            <CardArt card={card} size="md" />
+            <div>
+              <div className="result-name">{card.name}</div>
+              <div className="big-rate">
+                {top.rate}<span className="x">×</span>{' '}
+                <span className="result-cat">{sub.toLowerCase()}</span>
+              </div>
+            </div>
+            <div className="arrival-stamp">
+              <span className="stamp-num">{top.rate}×</span>
+              <span className="stamp-unit">{(card?.issuer || '').toLowerCase().includes('capital one') ? 'CASH' : 'PTS'}</span>
+            </div>
+          </div>
+
+          <div className="arrival-uplift">
+            Based on a typical basket {merchant.basket ? `(~$${merchant.basket})` : ''},
+            that's roughly <b>+${uplift.toFixed(uplift < 10 ? 2 : 0)}</b> more than your runner-up.
+          </div>
+
+          {runner && (
+            <>
+              <div className="arrival-section-label">Not {card.name.split(' ')[0]}? Next best:</div>
+              <div className="alt-row">
+                <div className={`alt-tile ${brandKey(runner.card)}`}>
+                  <span className={`chip chip-sm ${brandKey(runner.card)}`} aria-hidden="true" />
+                  <div>
+                    <div className="alt-name">{runner.card.name}</div>
+                    <div className="alt-rate">{multLabel(runner.card, runner.rate)}</div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
