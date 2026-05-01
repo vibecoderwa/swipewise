@@ -87,6 +87,24 @@ export function recommendCards({ transactions, ownedCardIds, days = 30 }) {
     };
   });
 
+  const ranked = recs
+    .filter(r => r.net_value > 5)
+    .sort((a, b) => b.net_value - a.net_value)
+    .slice(0, 5);
+
+  // Confidence per FR-ENG-06: gap between #1 and #2 net_value, normalized.
+  for (let i = 0; i < ranked.length; i++) {
+    const me = ranked[i];
+    const next = ranked[i + 1];
+    if (!next) {
+      me.confidence = 'high';
+      continue;
+    }
+    const gap = me.net_value - next.net_value;
+    const ratio = gap / Math.max(1, next.net_value);
+    me.confidence = ratio > 0.5 ? 'high' : ratio > 0.15 ? 'medium' : 'low';
+  }
+
   const sufficient = txCount >= 5 && totalAnnualSpend > 0;
 
   return {
@@ -97,10 +115,7 @@ export function recommendCards({ transactions, ownedCardIds, days = 30 }) {
       CATEGORIES.map(c => [c, Number(annualByCategory[c].toFixed(2))])
     ),
     total_annual_spend: Number(totalAnnualSpend.toFixed(2)),
-    recommendations: recs
-      .filter(r => r.net_value > 5)
-      .sort((a, b) => b.net_value - a.net_value)
-      .slice(0, 5),
+    recommendations: ranked,
   };
 }
 

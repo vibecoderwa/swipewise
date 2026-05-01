@@ -28,10 +28,10 @@ export default function Insights({ data }) {
   return (
     <>
       <div className="card">
-        <h2>Missed rewards (last 30d)</h2>
-        <div className="big">${total_missed_rewards.toFixed(2)}</div>
-        <div className="muted small">
-          What you'd have earned by always using your best card.
+        <div className="metric-label">Left on the table · last 30 days</div>
+        <div className="metric-big">${total_missed_rewards.toFixed(2)}</div>
+        <div className="metric-sub">
+          What you'd have earned by always reaching for your best card.
         </div>
       </div>
 

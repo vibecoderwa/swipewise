@@ -37,4 +37,7 @@ export const api = {
   cards: () => request('/api/cards'),
   insights: () => request('/api/insights'),
   recommendations: () => request('/api/recommendations'),
+  credits: () => request('/api/credits'),
+  toggleCredit: (card_id, credit_id, captured) =>
+    request('/api/credits/toggle', { method: 'POST', body: JSON.stringify({ card_id, credit_id, captured }) }),
 };

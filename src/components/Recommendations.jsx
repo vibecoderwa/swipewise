@@ -1,6 +1,17 @@
 import { useState } from 'react';
 import CardArt from './CardArt.jsx';
 
+function ConfidenceBadge({ level }) {
+  const lit = level === 'high' ? 3 : level === 'medium' ? 2 : 1;
+  return (
+    <span className="conf" title={`${level} confidence`}>
+      {[0, 1, 2].map(i => (
+        <span key={i} className={`conf-dot ${i < lit ? 'on' : ''}`} />
+      ))}
+    </span>
+  );
+}
+
 export default function Recommendations({ data, allCards = [] }) {
   const cardById = Object.fromEntries(allCards.map(c => [c.id, c]));
   const [expanded, setExpanded] = useState(null);
@@ -43,14 +54,15 @@ export default function Recommendations({ data, allCards = [] }) {
           <div className="rec-row">
             <CardArt card={cardById[r.card_id] || { id: r.card_id, name: r.card_name, issuer: r.issuer }} size="md" />
             <div className="rec-main">
-              <div className="rec-name">{r.card_name}</div>
+              <div className="rec-name">
+                {r.card_name}
+                <ConfidenceBadge level={r.confidence} />
+              </div>
               <div className="rec-headline muted small">{r.headline}</div>
             </div>
             <div className="rec-value">
-              <div className="rec-net">+${Math.round(r.net_value)}/yr</div>
-              {r.annual_fee > 0 && (
-                <div className="muted small">${r.annual_fee} fee</div>
-              )}
+              <div className="rec-net">+${Math.round(r.net_value)}</div>
+              <div className="rec-fee">/yr{r.annual_fee > 0 ? ` · $${r.annual_fee} fee` : ''}</div>
             </div>
           </div>
           <button

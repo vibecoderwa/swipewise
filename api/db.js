@@ -49,6 +49,15 @@ db.exec(`
     pfc_primary TEXT,
     pfc_detailed TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS captured_credits (
+    user_id TEXT NOT NULL,
+    card_id TEXT NOT NULL,
+    credit_id TEXT NOT NULL,
+    captured INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, card_id, credit_id)
+  );
 `);
 
 export function getOrCreateUser(userId) {

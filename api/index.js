@@ -207,6 +207,61 @@ app.get('/api/insights', (req, res) => {
   });
 });
 
+app.get('/api/credits', (req, res) => {
+  const userId = getUserId(req);
+  const cards = userCards(userId);
+
+  const captured = new Map();
+  for (const row of db.prepare('SELECT card_id, credit_id, captured FROM captured_credits WHERE user_id = ?').all(userId)) {
+    captured.set(`${row.card_id}::${row.credit_id}`, row.captured === 1);
+  }
+
+  const result = [];
+  let totalRealized = 0;
+  let totalPotential = 0;
+  let totalFees = 0;
+
+  for (const card of cards) {
+    if (!card.credits || !card.credits.length) continue;
+    const items = card.credits.map(cr => {
+      const key = `${card.id}::${cr.id}`;
+      const isCaptured = captured.has(key) ? captured.get(key) : !!cr.defaultCaptured;
+      totalPotential += cr.value;
+      if (isCaptured) totalRealized += cr.value;
+      return { ...cr, captured: isCaptured };
+    });
+    totalFees += card.annual_fee || 0;
+    result.push({
+      card_id: card.id,
+      card_name: card.name,
+      issuer: card.issuer,
+      annual_fee: card.annual_fee || 0,
+      credits: items,
+    });
+  }
+
+  res.json({
+    cards: result,
+    total_realized: Number(totalRealized.toFixed(2)),
+    total_potential: Number(totalPotential.toFixed(2)),
+    total_fees: Number(totalFees.toFixed(2)),
+    net_after_fees: Number((totalRealized - totalFees).toFixed(2)),
+  });
+});
+
+app.post('/api/credits/toggle', (req, res) => {
+  const userId = getUserId(req);
+  const { card_id, credit_id, captured } = req.body;
+  if (!card_id || !credit_id) return res.status(400).json({ error: 'card_id and credit_id required' });
+
+  db.prepare(`INSERT INTO captured_credits (user_id, card_id, credit_id, captured, updated_at)
+              VALUES (?, ?, ?, ?, ?)
+              ON CONFLICT(user_id, card_id, credit_id) DO UPDATE SET captured = excluded.captured, updated_at = excluded.updated_at`)
+    .run(userId, card_id, credit_id, captured ? 1 : 0, Date.now());
+
+  res.json({ ok: true });
+});
+
 app.get('/api/recommendations', (req, res) => {
   const userId = getUserId(req);
   const cards = userCards(userId);

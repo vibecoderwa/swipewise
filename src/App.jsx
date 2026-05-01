@@ -6,6 +6,7 @@ import Insights from './components/Insights.jsx';
 import ShareButton from './components/ShareButton.jsx';
 import InstallPrompt from './components/InstallPrompt.jsx';
 import Recommendations from './components/Recommendations.jsx';
+import Credits from './components/Credits.jsx';
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -76,8 +77,8 @@ export default function App() {
 
       {!hasAccounts && (
         <div className="hero">
-          <h1>The smartest card to swipe.</h1>
-          <p>Connect a card, and we'll show you what to use—and what you've been leaving on the table.</p>
+          <h1>The smartest <em>card</em> to swipe.</h1>
+          <p>Connect once. We'll quietly tell you which card to use — and what you've been leaving on the table.</p>
         </div>
       )}
 
@@ -93,6 +94,8 @@ export default function App() {
       {hasAccounts && <Insights data={insights} />}
 
       {hasAccounts && <Recommendations data={recommendations} allCards={cards} />}
+
+      {hasAccounts && <Credits userCards={insights?.user_cards || []} />}
 
       {hasAccounts && (
         <div className="card">
