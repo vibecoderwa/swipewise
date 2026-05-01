@@ -2,8 +2,11 @@ import ScreenHeader from '../components/ScreenHeader.jsx';
 import AccountList from '../components/AccountList.jsx';
 import PlaidConnect from '../components/PlaidConnect.jsx';
 import ShareButton from '../components/ShareButton.jsx';
+import { api } from '../lib/api.js';
 
-export default function SettingsScreen({ accounts, cards, syncing, onSync, onChange }) {
+export default function SettingsScreen({ accounts, cards, syncing, onSync, onChange, onSignOut }) {
+  const phone = api.getPhone();
+
   return (
     <div className="screen">
       <ScreenHeader eyebrow="Preferences" title="Settings" />
@@ -27,6 +30,16 @@ export default function SettingsScreen({ accounts, cards, syncing, onSync, onCha
         <button className="btn secondary" onClick={onSync} disabled={syncing}>
           {syncing ? 'Syncing…' : 'Sync transactions'}
         </button>
+      </div>
+
+      <div className="card">
+        <h2>Account</h2>
+        {phone && (
+          <div className="muted small" style={{ marginBottom: 14, fontFamily: 'var(--font-mono)' }}>
+            Signed in as {phone}
+          </div>
+        )}
+        <button className="btn secondary" onClick={onSignOut}>Sign out</button>
       </div>
 
       <div className="card">

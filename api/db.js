@@ -14,6 +14,7 @@ db.pragma('journal_mode = WAL');
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
+    phone TEXT,
     created_at INTEGER NOT NULL
   );
 
@@ -58,11 +59,42 @@ db.exec(`
     updated_at INTEGER NOT NULL,
     PRIMARY KEY (user_id, card_id, credit_id)
   );
+
+  CREATE TABLE IF NOT EXISTS manual_cards (
+    user_id TEXT NOT NULL,
+    card_id TEXT NOT NULL,
+    added_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, card_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS auth_otps (
+    phone TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    code TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0
+  );
 `);
+
+// Lightweight migration for existing dbs that pre-date the phone column
+try {
+  const cols = db.prepare("PRAGMA table_info(users)").all();
+  if (!cols.find(c => c.name === 'phone')) {
+    db.exec('ALTER TABLE users ADD COLUMN phone TEXT');
+  }
+} catch (_) { /* ignore */ }
 
 export function getOrCreateUser(userId) {
   const existing = db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
   if (existing) return existing;
   db.prepare('INSERT INTO users (id, created_at) VALUES (?, ?)').run(userId, Date.now());
   return { id: userId };
+}
+
+export function findUserByPhone(phone) {
+  return db.prepare('SELECT id FROM users WHERE phone = ?').get(phone);
+}
+
+export function setUserPhone(userId, phone) {
+  db.prepare('UPDATE users SET phone = ? WHERE id = ?').run(phone, userId);
 }
