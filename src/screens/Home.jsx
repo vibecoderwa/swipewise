@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import PlaidConnect from '../components/PlaidConnect.jsx';
 import CardArt from '../components/CardArt.jsx';
+import { api } from '../lib/api.js';
 import { inferCategory, categoryLabel, bestCardFor, QUICK_MERCHANTS } from '../lib/merchantInfer.js';
 import { rankMerchants, distanceLabel } from '../lib/nearby.js';
 
@@ -69,28 +70,7 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected }
 
   // First-run state — no cards yet.
   if (!hasAccounts) {
-    return (
-      <div className="screen">
-        <div className="brand-mini">
-          <div className="brand-mark-mini" />
-          <span>Swipewise</span>
-        </div>
-        <h1 className="hero-q">
-          Your wallet<br/>
-          just got<br/>
-          <span className="accent">opinionated.</span>
-        </h1>
-        <p className="hero-q-sub">
-          Bring your wallet, not your card numbers. We read which cards you have and
-          tell you which to swipe — <i>before</i> you swipe it.
-        </p>
-        {error && <div className="error">{error}</div>}
-        <PlaidConnect onConnected={onConnected} />
-        <div className="hero-q-secondary">
-          Read-only · Plaid-secured · no card numbers stored
-        </div>
-      </div>
-    );
+    return <FirstRun error={error} onConnected={onConnected} />;
   }
 
   function detectLocation() {
@@ -228,6 +208,113 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected }
           onClose={() => setOpenMerchant(null)}
         />
       )}
+    </div>
+  );
+}
+
+function FirstRun({ error, onConnected }) {
+  const [mode, setMode] = useState('hero'); // 'hero' | 'manual'
+  const [cards, setCards] = useState([]);
+  const [selected, setSelected] = useState(new Set());
+  const [busy, setBusy] = useState(false);
+  const [localError, setLocalError] = useState(null);
+
+  useEffect(() => {
+    if (mode !== 'manual' || cards.length) return;
+    api.cards().then(r => setCards(r.cards)).catch(e => setLocalError(e.message));
+  }, [mode, cards.length]);
+
+  function toggle(id) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  async function save() {
+    if (selected.size === 0) return;
+    setBusy(true);
+    setLocalError(null);
+    try {
+      await api.setManualCards([...selected]);
+      onConnected?.();
+    } catch (e) {
+      setLocalError(e.message);
+      setBusy(false);
+    }
+  }
+
+  if (mode === 'manual') {
+    return (
+      <div className="screen">
+        <div className="auth-top">
+          <button className="back-btn" onClick={() => setMode('hero')} aria-label="Back">‹</button>
+          <div className="step-meta">Pick your cards</div>
+        </div>
+        <h1 className="hero-q" style={{ marginTop: 16 }}>
+          Pick the cards<br/>in your wallet.
+        </h1>
+        <p className="hero-q-sub">{selected.size} selected · tap to toggle</p>
+        {localError && <div className="error">{localError}</div>}
+        <div className="manual-list">
+          {cards.map(c => {
+            const isSel = selected.has(c.id);
+            const brand = c.id?.split('_')[0] || 'default';
+            return (
+              <button
+                key={c.id}
+                className={`manual-card ${isSel ? 'selected' : ''}`}
+                onClick={() => toggle(c.id)}
+              >
+                <span className={`chip ${brand}`}>{c.issuer === 'American Express' ? 'AMEX' : c.issuer.slice(0, 4).toUpperCase()}</span>
+                <div className="manual-card-text">
+                  <div className="manual-card-name">{c.name}</div>
+                  <div className="manual-card-fee">{c.annual_fee ? `$${c.annual_fee}/yr` : 'No fee'}</div>
+                </div>
+                <span className={`check-tile ${isSel ? 'on' : ''}`}>{isSel ? '✓' : ''}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="auth-cta">
+          <button className="btn accent" disabled={selected.size === 0 || busy} onClick={save}>
+            {busy ? 'Saving…' : selected.size === 0 ? 'Pick at least one card' : `Continue with ${selected.size} card${selected.size === 1 ? '' : 's'}`}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="screen">
+      <div className="brand-mini">
+        <div className="brand-mark-mini" />
+        <span>Swipewise</span>
+      </div>
+      <h1 className="hero-q">
+        Your wallet<br/>
+        just got<br/>
+        <span className="accent">opinionated.</span>
+      </h1>
+      <p className="hero-q-sub">
+        Bring your wallet, not your card numbers. We read which cards you have and
+        tell you which to swipe — <i>before</i> you swipe it.
+      </p>
+      {error && <div className="error">{error}</div>}
+      <PlaidConnect onConnected={onConnected} />
+      <div className="or-divider"><span>or</span></div>
+      <button className="manual-row" onClick={() => setMode('manual')}>
+        <div className="manual-icon">✍︎</div>
+        <div className="manual-text">
+          <div className="manual-title">Enter cards manually</div>
+          <div className="manual-sub">Pick from our catalog. No bank needed.</div>
+        </div>
+        <div className="manual-chev">›</div>
+      </button>
+      <div className="hero-q-secondary">
+        Read-only · Plaid-secured · no card numbers stored
+      </div>
     </div>
   );
 }

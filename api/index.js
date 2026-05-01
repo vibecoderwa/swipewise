@@ -120,8 +120,93 @@ app.post('/api/manual_cards', (req, res) => {
   });
   tx(valid);
 
-  res.json({ ok: true, count: valid.length });
+  // Prototype convenience: if the user has no Plaid items and no transactions
+  // yet, auto-seed synthetic accounts + 30 days of plausible transactions so
+  // every screen has data to show. Skipped in production.
+  let seeded = 0;
+  if (process.env.NODE_ENV !== 'production' && valid.length > 0) {
+    const hasPlaid = db.prepare('SELECT 1 FROM plaid_items WHERE user_id = ? LIMIT 1').get(userId);
+    const hasTx = db.prepare('SELECT 1 FROM transactions WHERE user_id = ? LIMIT 1').get(userId);
+    if (!hasPlaid && !hasTx) {
+      seeded = seedDemoTransactions(userId, valid);
+    }
+  }
+
+  res.json({ ok: true, count: valid.length, seeded });
 });
+
+function seedDemoTransactions(userId, cardIds) {
+  const itemId = `demo_${userId.slice(0, 8)}`;
+  db.prepare(`INSERT OR REPLACE INTO plaid_items
+    (id, user_id, access_token, item_id, institution_name, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)`)
+    .run(itemId, userId, 'demo', itemId, 'Demo Bank', Date.now());
+
+  const insAcct = db.prepare(`INSERT OR REPLACE INTO accounts
+    (id, item_id, user_id, name, mask, type, subtype, matched_card_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
+  const accountIds = [];
+  for (const cid of cardIds) {
+    const card = CARDS.find(c => c.id === cid);
+    if (!card) continue;
+    const acctId = `demo_acct_${cid}_${userId.slice(0, 6)}`;
+    insAcct.run(acctId, itemId, userId, card.name, '0000', 'credit', 'credit card', cid);
+    accountIds.push({ acctId, cid, card });
+  }
+
+  // Plaid PFC pairs we map to our internal categories. Plus fake merchant names.
+  const TX_TEMPLATES = [
+    { merchant: 'Whole Foods Market',     amount: 87.42, primary: 'FOOD_AND_DRINK', detailed: 'FOOD_AND_DRINK_GROCERIES' },
+    { merchant: 'Trader Joe\'s',          amount: 54.18, primary: 'FOOD_AND_DRINK', detailed: 'FOOD_AND_DRINK_GROCERIES' },
+    { merchant: 'Costco',                 amount: 162.55, primary: 'FOOD_AND_DRINK', detailed: 'FOOD_AND_DRINK_GROCERIES' },
+    { merchant: 'Safeway',                amount: 41.27, primary: 'FOOD_AND_DRINK', detailed: 'FOOD_AND_DRINK_GROCERIES' },
+    { merchant: 'Sweetgreen',             amount: 17.85, primary: 'FOOD_AND_DRINK', detailed: 'FOOD_AND_DRINK_RESTAURANT' },
+    { merchant: 'Chipotle',               amount: 14.20, primary: 'FOOD_AND_DRINK', detailed: 'FOOD_AND_DRINK_FAST_FOOD' },
+    { merchant: 'Starbucks',              amount: 6.75,  primary: 'FOOD_AND_DRINK', detailed: 'FOOD_AND_DRINK_COFFEE' },
+    { merchant: 'Blue Bottle Coffee',     amount: 8.50,  primary: 'FOOD_AND_DRINK', detailed: 'FOOD_AND_DRINK_COFFEE' },
+    { merchant: 'Nobu',                   amount: 218.90, primary: 'FOOD_AND_DRINK', detailed: 'FOOD_AND_DRINK_RESTAURANT' },
+    { merchant: 'Tartine Bakery',         amount: 22.40, primary: 'FOOD_AND_DRINK', detailed: 'FOOD_AND_DRINK_RESTAURANT' },
+    { merchant: 'Shell',                  amount: 48.30, primary: 'TRANSPORTATION', detailed: 'TRANSPORTATION_GAS' },
+    { merchant: 'Chevron',                amount: 52.15, primary: 'TRANSPORTATION', detailed: 'TRANSPORTATION_GAS' },
+    { merchant: 'Uber',                   amount: 24.60, primary: 'TRAVEL', detailed: 'TRAVEL_TAXIS_AND_RIDE_SHARES' },
+    { merchant: 'Lyft',                   amount: 19.80, primary: 'TRAVEL', detailed: 'TRAVEL_TAXIS_AND_RIDE_SHARES' },
+    { merchant: 'Delta Airlines',         amount: 412.00, primary: 'TRAVEL', detailed: 'TRAVEL_FLIGHTS' },
+    { merchant: 'Marriott',               amount: 289.50, primary: 'TRAVEL', detailed: 'TRAVEL_LODGING' },
+    { merchant: 'Amazon',                 amount: 64.99, primary: 'GENERAL_MERCHANDISE', detailed: 'GENERAL_MERCHANDISE_ONLINE_MARKETPLACES' },
+    { merchant: 'Amazon',                 amount: 28.45, primary: 'GENERAL_MERCHANDISE', detailed: 'GENERAL_MERCHANDISE_ONLINE_MARKETPLACES' },
+    { merchant: 'Target',                 amount: 76.30, primary: 'GENERAL_MERCHANDISE', detailed: 'GENERAL_MERCHANDISE_DEPARTMENT_STORES' },
+    { merchant: 'Netflix',                amount: 15.49, primary: 'ENTERTAINMENT', detailed: 'ENTERTAINMENT_TV_AND_MOVIES' },
+    { merchant: 'Spotify',                amount: 11.99, primary: 'ENTERTAINMENT', detailed: 'ENTERTAINMENT_TV_AND_MOVIES' },
+    { merchant: 'Apple',                  amount: 9.99,  primary: 'GENERAL_MERCHANDISE', detailed: 'GENERAL_MERCHANDISE_ELECTRONICS' },
+    { merchant: 'Walgreens',              amount: 18.20, primary: 'GENERAL_MERCHANDISE', detailed: 'GENERAL_MERCHANDISE_PHARMACIES' },
+    { merchant: 'CVS',                    amount: 24.10, primary: 'GENERAL_MERCHANDISE', detailed: 'GENERAL_MERCHANDISE_PHARMACIES' },
+  ];
+
+  // Realistic distribution: 40 transactions over the last 30 days.
+  // Assign each to whichever account would "make sense" — but for a prototype
+  // we just rotate through accounts so each card sees some activity (which
+  // generates non-zero missed-rewards numbers when categories don't align).
+  const insTx = db.prepare(`INSERT OR REPLACE INTO transactions
+    (id, user_id, account_id, name, merchant_name, amount, date, category, pfc_primary, pfc_detailed)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+
+  let count = 0;
+  const today = new Date();
+  for (let i = 0; i < 40; i++) {
+    const tpl = TX_TEMPLATES[i % TX_TEMPLATES.length];
+    const acct = accountIds[i % accountIds.length];
+    if (!acct) break;
+    const d = new Date(today);
+    d.setDate(today.getDate() - Math.floor(i * 0.75));
+    const date = d.toISOString().slice(0, 10);
+    const amount = +(tpl.amount * (0.85 + Math.random() * 0.3)).toFixed(2);
+    const txId = `demo_tx_${userId.slice(0, 6)}_${i}`;
+    insTx.run(txId, userId, acct.acctId, tpl.merchant, tpl.merchant, amount, date,
+              tpl.primary.toLowerCase(), tpl.primary, tpl.detailed);
+    count++;
+  }
+  return count;
+}
 
 app.post('/api/plaid/link_token', async (req, res) => {
   try {
@@ -180,6 +265,8 @@ app.post('/api/sync', async (req, res) => {
     let totalAdded = 0;
 
     for (const item of items) {
+      // Skip synthetic demo items — they hold seeded transactions, not Plaid data.
+      if (item.access_token === 'demo') continue;
       const end = new Date();
       const start = new Date();
       start.setDate(end.getDate() - 30);
