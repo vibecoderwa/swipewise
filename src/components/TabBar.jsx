@@ -1,11 +1,10 @@
 import Icon from './Icon.jsx';
 
 const TABS = [
-  { id: 'home',      label: 'Home',       icon: 'home' },
-  { id: 'cats',      label: 'Categories', icon: 'grid' },
-  { id: 'analytics', label: 'Analytics',  icon: 'trend' },
-  { id: 'credits',   label: 'Credits',    icon: 'gift' },
-  { id: 'settings',  label: 'Settings',   icon: 'settings' },
+  { id: 'home',     label: 'Home',     icon: 'home' },
+  { id: 'cards',    label: 'Cards',    icon: 'grid' },
+  { id: 'insights', label: 'Insights', icon: 'trend' },
+  { id: 'settings', label: 'Settings', icon: 'settings' },
 ];
 
 export default function TabBar({ active, onChange }) {

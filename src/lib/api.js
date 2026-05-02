@@ -64,4 +64,16 @@ export const api = {
   credits: () => request('/api/credits'),
   toggleCredit: (card_id, credit_id, captured) =>
     request('/api/credits/toggle', { method: 'POST', body: JSON.stringify({ card_id, credit_id, captured }) }),
+
+  streak: () => request('/api/streak'),
+  logSwipe: (payload) =>
+    request('/api/swipes', { method: 'POST', body: JSON.stringify(payload) }),
+  feed: () => request('/api/feed'),
+  createPost: (payload) =>
+    request('/api/posts', { method: 'POST', body: JSON.stringify(payload) }),
+  dismissPending: (id) =>
+    request(`/api/pending/${id}/dismiss`, { method: 'POST', body: '{}' }),
+  prefs: () => request('/api/prefs'),
+  setPrefs: (patch) =>
+    request('/api/prefs', { method: 'POST', body: JSON.stringify(patch) }),
 };
