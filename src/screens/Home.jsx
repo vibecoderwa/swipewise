@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import PlaidConnect from '../components/PlaidConnect.jsx';
 import CardArt from '../components/CardArt.jsx';
+import Avatar from '../components/Avatar.jsx';
+import { api } from '../lib/api.js';
 import { inferCategory, categoryLabel, bestCardFor, QUICK_MERCHANTS } from '../lib/merchantInfer.js';
 import { rankMerchants, distanceLabel } from '../lib/nearby.js';
 
@@ -48,7 +50,7 @@ function ConfidenceDots({ level }) {
   );
 }
 
-export default function HomeScreen({ hasAccounts, insights, error, onConnected }) {
+export default function HomeScreen({ hasAccounts, insights, error, onConnected, streak, friendsWeek, go }) {
   const userCards = insights?.user_cards || [];
   const [query, setQuery] = useState('');
   const [userLoc, setUserLoc] = useState(null);
@@ -113,12 +115,68 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected }
   const searchCategory = trimmed ? inferCategory(trimmed) : null;
   const searchReco = (searchCategory && userCards.length) ? bestCardFor(searchCategory, userCards) : null;
 
+  async function recordSwipe(merchant) {
+    if (!merchant?.top) return;
+    const card = merchant.top.card;
+    const before = streak || { streak: 0, ytd_total: 0 };
+    try {
+      const r = await api.logSwipe({
+        card_id: card.id,
+        merchant: merchant.name,
+        location: merchant.sub,
+        category: merchant.category,
+        rate: merchant.top.rate,
+        basket: merchant.basket || 0,
+      });
+      // Predict the post-swipe state without round-tripping /api/streak —
+      // the win moment will animate from "before" to "after" while the
+      // refresh kicks in in the background.
+      const after = {
+        streak: Math.max(before.streak, before.streak + (before.streak === 0 ? 1 : 0)),
+        ytd_total: Math.round((before.ytd_total || 0) + r.reward),
+      };
+      go?.('winmoment', {
+        card_id: card.id,
+        card_name: card.name,
+        merchant: merchant.name,
+        location: merchant.sub,
+        category: merchant.category,
+        rate: merchant.top.rate,
+        reward: r.reward,
+        swipe_id: r.id,
+        streak_before: before,
+        streak_after: after,
+      });
+    } catch (e) {
+      // Swallow — the user can retry on the next tap.
+    }
+  }
+
   return (
     <div className="screen">
-      <div className="brand-mini">
+      <div className="brand-mini home-header">
         <div className="brand-mark-mini" />
         <span>Swipewise</span>
       </div>
+
+      {/* Streak + YTD strip — two chips a returning user wants to see first */}
+      {streak && (
+        <div className="home-stats">
+          <button className="home-stat streak" onClick={() => go?.('insights')}>
+            <span className="flame">🔥</span>
+            <div>
+              <div className="num">{streak.streak} <small>wk</small></div>
+              <div className="label">streak</div>
+            </div>
+          </button>
+          <button className="home-stat ytd" onClick={() => go?.('insights')}>
+            <div>
+              <div className="num">+${streak.ytd_total}</div>
+              <div className="label">this year · {streak.ytd_year}</div>
+            </div>
+          </button>
+        </div>
+      )}
 
       <div className="geo-eyebrow">
         <span className={`geo-dot ${locStatus === 'granted' ? 'on' : ''}`} />
@@ -153,36 +211,71 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected }
       )}
 
       {ranked.length > 0 && (
-        <div className="merchants-list">
-          {ranked.map((m, i) => {
-            const card = m.top?.card;
-            const dLabel = distanceLabel(userLoc, m);
-            const isAccent = i === 0; // FR-VIS-02: only the top pick gets the accent
-            return (
+        <>
+          <div className="merchants-list">
+            {ranked.map((m, i) => {
+              const card = m.top?.card;
+              const dLabel = distanceLabel(userLoc, m);
+              const isAccent = i === 0; // FR-VIS-02: only the top pick gets the accent
+              return (
+                <button
+                  key={m.id}
+                  className={`merchant-row ${isAccent ? 'accent' : ''} ${brandKey(card)}`}
+                  onClick={() => setOpenMerchant(m)}
+                >
+                  <div className="merchant-icon">{m.icon}</div>
+                  <div className="merchant-text">
+                    <div className="merchant-name">{m.name}</div>
+                    <div className="merchant-sub">{m.sub}{dLabel ? ` · ${dLabel}` : ''}</div>
+                  </div>
+                  <div className="merchant-right">
+                    <div className="merchant-mult">
+                      <span className={`chip chip-sm ${brandKey(card)}`} aria-hidden="true" />
+                      <span className="merchant-rate">{m.top ? multLabel(card, m.top.rate) : '—'}</span>
+                    </div>
+                    <div className="merchant-uplift">
+                      {m.uplift > 0 ? `+$${m.uplift.toFixed(m.uplift < 1 ? 2 : (m.uplift < 10 ? 2 : 0))}` : ''}
+                      <ConfidenceDots level={m.level} />
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* "✓ Just swiped" — confirms the user took our top recommendation
+              and fires the Win Moment. Mirrors the prototype's geo arrival flow. */}
+          {ranked[0]?.top && (
+            <div className="just-swiped-row">
               <button
-                key={m.id}
-                className={`merchant-row ${isAccent ? 'accent' : ''} ${brandKey(card)}`}
-                onClick={() => setOpenMerchant(m)}
+                className="just-swiped"
+                onClick={() => recordSwipe(ranked[0])}
               >
-                <div className="merchant-icon">{m.icon}</div>
-                <div className="merchant-text">
-                  <div className="merchant-name">{m.name}</div>
-                  <div className="merchant-sub">{m.sub}{dLabel ? ` · ${dLabel}` : ''}</div>
-                </div>
-                <div className="merchant-right">
-                  <div className="merchant-mult">
-                    <span className={`chip chip-sm ${brandKey(card)}`} aria-hidden="true" />
-                    <span className="merchant-rate">{m.top ? multLabel(card, m.top.rate) : '—'}</span>
-                  </div>
-                  <div className="merchant-uplift">
-                    {m.uplift > 0 ? `+$${m.uplift.toFixed(m.uplift < 1 ? 2 : (m.uplift < 10 ? 2 : 0))}` : ''}
-                    <ConfidenceDots level={m.level} />
-                  </div>
-                </div>
+                ✓ Just swiped {ranked[0].top.card.name.split(' ').slice(-2).join(' ')}
               </button>
-            );
-          })}
-        </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Friends activity strip — quiet surface, NOT a tab. Tap to open
+          the full Friends view via go('friends'). */}
+      {go && friendsWeek?.names?.length > 0 && (
+        <button
+          className="friends-strip"
+          onClick={() => go('friends')}
+        >
+          <div className="stack">
+            <Avatar tone="sky"   init={friendsWeek.names[0]?.[0] || 'A'} size={22} />
+            {friendsWeek.names[1] && <Avatar tone="mint"  init={friendsWeek.names[1]?.[0]} size={22} />}
+            {friendsWeek.names[2] && <Avatar tone="coral" init={friendsWeek.names[2]?.[0]} size={22} />}
+          </div>
+          <div className="copy">
+            <b>{friendsWeek.names.slice(0, 2).join(', ')}{friendsWeek.names.length > 2 ? ` & ${friendsWeek.names.length - 2} ${friendsWeek.names.length - 2 === 1 ? 'other' : 'others'}` : ''}</b>{' '}
+            earned <span className="gain">+${friendsWeek.total_reward}</span> this week
+          </div>
+          <span className="chev">›</span>
+        </button>
       )}
 
       <div className="or-divider"><span>or type a store</span></div>
