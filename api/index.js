@@ -6,10 +6,11 @@ import { dirname, join } from 'path';
 import { existsSync } from 'fs';
 import crypto from 'crypto';
 
-import { db, getOrCreateUser, findUserByPhone, setUserPhone } from './db.js';
+import { db, getOrCreateUser, findUserByPhone, setUserPhone, isoYearWeek, getPrefs, setPrefs } from './db.js';
 import { plaidClient, PLAID_PRODUCTS, PLAID_COUNTRY_CODES } from './plaid.js';
 import { CARDS, categoryFromPlaid, rewardRate, bestCardFor, matchCardFromAccount } from './cards.js';
 import { recommendCards } from './recommendations.js';
+import { seedSyntheticHistory, FRIENDS, FRIEND_POSTS } from './seed.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -119,6 +120,11 @@ app.post('/api/manual_cards', (req, res) => {
     for (const id of ids) ins.run(userId, id, now);
   });
   tx(valid);
+
+  // First time the user adds cards via the manual path, seed synthetic
+  // history so the streak and YTD aren't empty on day one.
+  const userCardObjs = valid.map(id => CARDS.find(c => c.id === id)).filter(Boolean);
+  seedSyntheticHistory(userId, userCardObjs);
 
   res.json({ ok: true, count: valid.length });
 });
@@ -383,6 +389,198 @@ app.get('/api/recommendations', (req, res) => {
 
   const result = recommendCards({ transactions: txs, ownedCardIds, days });
   res.json(result);
+});
+
+// ─── Streak + YTD ────────────────────────────────────────────
+// Streak is the count of consecutive recent ISO weeks (working backwards from
+// the current week) in which the user logged ≥1 smart-swipe event. YTD is the
+// sum of `reward` across this calendar year's events. Both are real, computed.
+app.get('/api/streak', (req, res) => {
+  const userId = getUserId(req);
+  const events = db.prepare(`
+    SELECT iso_year, iso_week, reward, created_at FROM swipe_events
+    WHERE user_id = ?
+  `).all(userId);
+
+  const yearNow = new Date().getUTCFullYear();
+  const weekKeys = new Set(events.map(e => `${e.iso_year}-${e.iso_week}`));
+
+  let streak = 0;
+  const cursor = new Date();
+  for (let i = 0; i < 200; i++) {
+    const { year, week } = isoYearWeek(cursor);
+    const key = `${year}-${week}`;
+    if (weekKeys.has(key)) {
+      streak++;
+    } else if (streak > 0) {
+      break;
+    } else if (i > 0) {
+      // No events in current week is OK — only break the streak once we've
+      // started counting.
+      break;
+    }
+    cursor.setUTCDate(cursor.getUTCDate() - 7);
+  }
+
+  const ytd = events
+    .filter(e => e.iso_year === yearNow)
+    .reduce((s, e) => s + (e.reward || 0), 0);
+
+  res.json({
+    streak,
+    ytd_total: Math.round(ytd),
+    ytd_year: yearNow,
+    event_count: events.length,
+  });
+});
+
+// Log a new smart-swipe event. Returns the updated streak/ytd so the client
+// can drive the count-up animation in WinMoment without a second call.
+app.post('/api/swipes', (req, res) => {
+  const userId = getUserId(req);
+  const { card_id, merchant, location, category, rate, basket } = req.body || {};
+  if (!card_id || !merchant || !category) {
+    return res.status(400).json({ error: 'card_id, merchant, category required' });
+  }
+  const card = CARDS.find(c => c.id === card_id);
+  if (!card) return res.status(400).json({ error: 'unknown card_id' });
+
+  const r = Number(rate) || rewardRate(card, category);
+  const b = Number(basket) || 0;
+  const reward = +(r * b * 0.01).toFixed(2);
+  const now = new Date();
+  const { year, week } = isoYearWeek(now);
+  const id = crypto.randomUUID();
+
+  db.prepare(`
+    INSERT INTO swipe_events
+    (id, user_id, card_id, merchant, location, category, rate, basket, reward, created_at, iso_year, iso_week)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, userId, card_id, merchant, location || null, category,
+         r, b, reward, now.getTime(), year, week);
+
+  res.json({ ok: true, id, reward });
+});
+
+// ─── Feed: friends posts + user's own posts + pending suggestions ─
+app.get('/api/feed', (req, res) => {
+  const userId = getUserId(req);
+
+  const userPosts = db.prepare(`
+    SELECT * FROM feed_posts WHERE user_id = ? ORDER BY created_at DESC
+  `).all(userId).map(p => {
+    const card = CARDS.find(c => c.id === p.card_id);
+    return {
+      id: p.id, is_you: true,
+      user_name: 'You', avatar_init: 'Y', avatar_tone: 'plum',
+      card_id: p.card_id, card_name: card?.name || p.card_id,
+      merchant: p.merchant, location: p.location,
+      category: p.category, rate: p.rate,
+      emoji: p.emoji, caption: p.caption,
+      tagged: p.tagged_ids ? JSON.parse(p.tagged_ids) : [],
+      visibility: p.visibility,
+      created_at: p.created_at,
+    };
+  });
+
+  const now = Date.now();
+  const friendPosts = FRIEND_POSTS.map(p => {
+    const card = CARDS.find(c => c.id === p.card_id);
+    return {
+      id: p.id, is_you: false,
+      user_name: p.user_name, avatar_init: p.avatar_init, avatar_tone: p.avatar_tone,
+      card_id: p.card_id, card_name: card?.name || p.card_id,
+      merchant: p.merchant, location: p.location,
+      category: p.category, rate: p.rate,
+      emoji: p.emoji, caption: p.caption,
+      tagged: p.tagged,
+      created_at: now - p.hours_ago * 3600 * 1000,
+      likes: p.likes, comments: p.comments,
+    };
+  });
+
+  const pending = db.prepare(`
+    SELECT * FROM pending_swipes
+    WHERE user_id = ? AND dismissed_at IS NULL
+    ORDER BY created_at DESC
+  `).all(userId).map(p => {
+    const card = CARDS.find(c => c.id === p.card_id);
+    return {
+      id: p.id, swipe_id: p.swipe_id,
+      card_id: p.card_id, card_name: card?.name || p.card_id,
+      merchant: p.merchant, location: p.location,
+      category: p.category, rate: p.rate,
+      created_at: p.created_at,
+    };
+  });
+
+  // Friends-week activity stat for the home strip
+  const weekAgo = now - 7 * 86400 * 1000;
+  const weekFriends = friendPosts.filter(p => p.created_at >= weekAgo);
+  const friendNamesShort = [...new Set(weekFriends.map(p => p.user_name.split(' ')[0]))];
+
+  res.json({
+    posts: [...userPosts, ...friendPosts].sort((a, b) => b.created_at - a.created_at),
+    pending,
+    friends: FRIENDS,
+    friends_week: {
+      names: friendNamesShort,
+      total_reward: weekFriends.reduce((s, p) => s + (p.rate * 18), 0).toFixed(0),
+    },
+  });
+});
+
+app.post('/api/posts', (req, res) => {
+  const userId = getUserId(req);
+  const { swipe_id, card_id, merchant, location, category, rate, emoji, caption, tagged, visibility } = req.body || {};
+  if (!card_id || !merchant) return res.status(400).json({ error: 'card_id and merchant required' });
+
+  const id = crypto.randomUUID();
+  db.prepare(`
+    INSERT INTO feed_posts
+    (id, user_id, swipe_id, card_id, merchant, location, category, rate, emoji, caption, tagged_ids, visibility, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, userId, swipe_id || null, card_id, merchant, location || null,
+         category || null, rate || null, emoji || null, caption || null,
+         JSON.stringify(tagged || []), visibility || 'friends', Date.now());
+
+  // If this was a pending suggestion, mark it dismissed so it leaves the strip.
+  if (swipe_id) {
+    db.prepare('UPDATE pending_swipes SET dismissed_at = ? WHERE swipe_id = ? AND user_id = ?')
+      .run(Date.now(), swipe_id, userId);
+  }
+
+  res.json({ ok: true, id });
+});
+
+app.post('/api/pending/:id/dismiss', (req, res) => {
+  const userId = getUserId(req);
+  db.prepare('UPDATE pending_swipes SET dismissed_at = ? WHERE id = ? AND user_id = ?')
+    .run(Date.now(), req.params.id, userId);
+  res.json({ ok: true });
+});
+
+// ─── Prefs ───────────────────────────────────────────────────
+app.get('/api/prefs', (req, res) => {
+  const userId = getUserId(req);
+  const p = getPrefs(userId);
+  res.json({
+    default_visibility: p.default_visibility,
+    reduce_patterns: !!p.reduce_patterns,
+    notif_arrival: !!p.notif_arrival,
+    notif_expiring: !!p.notif_expiring,
+    notif_weekly: !!p.notif_weekly,
+    cpp: p.cpp,
+  });
+});
+app.post('/api/prefs', (req, res) => {
+  const userId = getUserId(req);
+  const allowed = ['default_visibility', 'reduce_patterns', 'notif_arrival',
+                   'notif_expiring', 'notif_weekly', 'cpp'];
+  const patch = {};
+  for (const k of allowed) if (k in (req.body || {})) patch[k] = req.body[k];
+  const p = setPrefs(userId, patch);
+  res.json({ ok: true, prefs: p });
 });
 
 const distDir = join(__dirname, '..', 'dist');

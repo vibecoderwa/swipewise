@@ -74,7 +74,81 @@ db.exec(`
     expires_at INTEGER NOT NULL,
     attempts INTEGER NOT NULL DEFAULT 0
   );
+
+  -- Smart-swipe events: a row per time the user confirmed they used the
+  -- recommended card. Source of truth for streaks (consecutive weeks with
+  -- ≥1 event) and YTD totals (sum of reward dollars in the current year).
+  CREATE TABLE IF NOT EXISTS swipe_events (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    card_id TEXT,
+    merchant TEXT,
+    location TEXT,
+    category TEXT,
+    rate REAL,
+    basket REAL,
+    reward REAL,
+    created_at INTEGER NOT NULL,
+    iso_year INTEGER NOT NULL,
+    iso_week INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_swipes_user ON swipe_events(user_id, created_at DESC);
+
+  -- User-authored social posts. Friends posts are seeded in-memory.
+  CREATE TABLE IF NOT EXISTS feed_posts (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    swipe_id TEXT,
+    card_id TEXT,
+    merchant TEXT,
+    location TEXT,
+    category TEXT,
+    rate REAL,
+    emoji TEXT,
+    caption TEXT,
+    tagged_ids TEXT,
+    visibility TEXT NOT NULL DEFAULT 'friends',
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_posts_user ON feed_posts(user_id, created_at DESC);
+
+  -- Pending swipes the user could share (auto-suggest cards in feed).
+  -- Created when the seeder/Plaid detects a smart swipe; consumed when the
+  -- user shares it or dismisses it.
+  CREATE TABLE IF NOT EXISTS pending_swipes (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    swipe_id TEXT,
+    card_id TEXT,
+    merchant TEXT,
+    location TEXT,
+    category TEXT,
+    rate REAL,
+    created_at INTEGER NOT NULL,
+    dismissed_at INTEGER
+  );
+
+  -- Lightweight social/preferences kv per user.
+  CREATE TABLE IF NOT EXISTS user_prefs (
+    user_id TEXT PRIMARY KEY,
+    default_visibility TEXT NOT NULL DEFAULT 'friends',
+    reduce_patterns INTEGER NOT NULL DEFAULT 0,
+    notif_arrival INTEGER NOT NULL DEFAULT 1,
+    notif_expiring INTEGER NOT NULL DEFAULT 1,
+    notif_weekly INTEGER NOT NULL DEFAULT 0,
+    cpp REAL NOT NULL DEFAULT 1.5,
+    seeded INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL DEFAULT 0
+  );
 `);
+
+// Lightweight migration for older dbs that pre-date the user_prefs.seeded flag
+try {
+  const cols = db.prepare("PRAGMA table_info(user_prefs)").all();
+  if (cols.length && !cols.find(c => c.name === 'seeded')) {
+    db.exec('ALTER TABLE user_prefs ADD COLUMN seeded INTEGER NOT NULL DEFAULT 0');
+  }
+} catch (_) { /* ignore */ }
 
 // Lightweight migration for existing dbs that pre-date the phone column
 try {
@@ -97,4 +171,41 @@ export function findUserByPhone(phone) {
 
 export function setUserPhone(userId, phone) {
   db.prepare('UPDATE users SET phone = ? WHERE id = ?').run(phone, userId);
+}
+
+// ISO week — Monday-start. Returns { year, week } for use as the streak bucket.
+export function isoYearWeek(date) {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  // Thursday in current week decides the year
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return { year: d.getUTCFullYear(), week };
+}
+
+export function getPrefs(userId) {
+  let row = db.prepare('SELECT * FROM user_prefs WHERE user_id = ?').get(userId);
+  if (!row) {
+    db.prepare(`INSERT INTO user_prefs (user_id, updated_at) VALUES (?, ?)`).run(userId, Date.now());
+    row = db.prepare('SELECT * FROM user_prefs WHERE user_id = ?').get(userId);
+  }
+  return row;
+}
+
+export function setPrefs(userId, patch) {
+  const cur = getPrefs(userId);
+  const merged = { ...cur, ...patch, updated_at: Date.now() };
+  db.prepare(`
+    UPDATE user_prefs SET
+      default_visibility = ?, reduce_patterns = ?, notif_arrival = ?,
+      notif_expiring = ?, notif_weekly = ?, cpp = ?, seeded = ?, updated_at = ?
+    WHERE user_id = ?
+  `).run(
+    merged.default_visibility, merged.reduce_patterns ? 1 : 0,
+    merged.notif_arrival ? 1 : 0, merged.notif_expiring ? 1 : 0,
+    merged.notif_weekly ? 1 : 0, merged.cpp, merged.seeded ? 1 : 0,
+    merged.updated_at, userId
+  );
+  return getPrefs(userId);
 }
