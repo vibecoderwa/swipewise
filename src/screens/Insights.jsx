@@ -46,7 +46,7 @@ export default function InsightsScreen({ insights, recommendations, cards, strea
 
   return (
     <div className="screen">
-      <ScreenHeader eyebrow={`Insights · ${period}`} title="Insights" right={<Folio n={8} />} />
+      <ScreenHeader eyebrow={`Insights · ${period}`} title="Insights" em="on track." right={<Folio n={8} />} />
 
       {/* Streak + YTD hero — same chips as Home, displayed bigger */}
       <div className="home-stats" style={{ marginBottom: 20 }}>

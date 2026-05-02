@@ -69,10 +69,13 @@ export default function CardsScreen({ insights, credits }) {
 
   return (
     <div className="screen">
-      <ScreenHeader eyebrow="Your wallet" title="Cards" right={<Folio n={7} />} />
+      <ScreenHeader eyebrow="Your wallet" title="Cards" em="one brain." right={<Folio n={7} />} />
 
-      <p className="hero-q-sub" style={{ marginBottom: 18 }}>
-        ${Math.round(totalFees)} in fees this year · <b style={{ color: 'var(--mint-dk)' }}>${Math.round(totalRealized)} captured</b>
+      <p className="marginalia" style={{ marginTop: -8, marginBottom: 18, color: 'var(--graphite)' }}>
+        <em>three cards. one brain.</em> ${Math.round(totalFees)} in fees this year ·{' '}
+        <b style={{ color: 'var(--mint-dk)', fontStyle: 'normal', fontFamily: 'var(--font-sans)' }}>
+          ${Math.round(totalRealized)} captured
+        </b>
       </p>
 
       <div className="cards-list">

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import PlaidConnect from '../components/PlaidConnect.jsx';
 import CardArt from '../components/CardArt.jsx';
 import Avatar from '../components/Avatar.jsx';
+import Folio from '../components/Folio.jsx';
 import { api } from '../lib/api.js';
 import { inferCategory, categoryLabel, bestCardFor, QUICK_MERCHANTS } from '../lib/merchantInfer.js';
 import { rankMerchants, distanceLabel } from '../lib/nearby.js';
@@ -178,9 +179,12 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected, 
         </div>
       )}
 
-      <div className="geo-eyebrow">
-        <span className={`geo-dot ${locStatus === 'granted' ? 'on' : ''}`} />
-        {locStatus === 'granted' ? 'Near you · live' : 'Near you · sample'}
+      <div className="geo-eyebrow" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span className={`geo-dot ${locStatus === 'granted' ? 'on' : ''}`} />
+          {locStatus === 'granted' ? 'Near you · live' : 'Near you · sample'}
+        </span>
+        <Folio n={6} />
       </div>
       <h1 className="hero-q" style={{ marginTop: 8 }}>
         {ranked.length === 0
