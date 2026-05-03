@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api, clearSession } from './lib/api.js';
 import TabBar from './components/TabBar.jsx';
 import BackButton from './components/BackButton.jsx';
+import MotionScreen from './components/MotionScreen.jsx';
 import HomeScreen from './screens/Home.jsx';
 import CardsScreen from './screens/Cards.jsx';
 import InsightsScreen from './screens/Insights.jsx';
@@ -50,6 +51,7 @@ export default function App() {
   const [history, setHistory] = useState([]);
   // Optional context attached to the current screen (e.g. compose draft / win payload)
   const [ctx, setCtx] = useState(null);
+  const [direction, setDirection] = useState('forward');
 
   useEffect(() => {
     if (TAB_IDS.has(screen)) localStorage.setItem(TAB_KEY, screen);
@@ -121,6 +123,7 @@ export default function App() {
   // ─── Navigation ───
   function go(next, nextCtx = null) {
     if (next === screen) return;
+    setDirection('forward');
     // Switching to a tab clears the history (start fresh from the tab)
     if (TAB_IDS.has(next)) {
       setHistory([]);
@@ -133,6 +136,7 @@ export default function App() {
   function back() {
     if (history.length === 0) return;
     const prev = history[history.length - 1];
+    setDirection('back');
     setHistory(h => h.slice(0, -1));
     setScreen(prev);
     setCtx(null);
@@ -192,12 +196,16 @@ export default function App() {
   // light-on-dark variant for those.
   const isDarkScreen = false;
 
+  const screenMode = (screen === 'compose' || screen === 'winmoment') ? 'sheet' : 'page';
+
   return (
     <div className="app">
       {/* Floating back button — universal nav chrome, hidden when no history */}
       {history.length > 0 && (
         <BackButton onClick={back} dark={isDarkScreen} />
       )}
+
+      <MotionScreen key={screen} direction={direction} mode={screenMode}>
 
       {screen === 'home' && (
         <HomeScreen
@@ -223,6 +231,7 @@ export default function App() {
           insights={insights}
           recommendations={recommendations}
           cards={cards}
+          credits={credits}
           streak={streak}
           go={go}
         />
@@ -262,6 +271,8 @@ export default function App() {
           onClaim={refresh}
         />
       )}
+
+      </MotionScreen>
 
       {!hideTabBar && (
         <TabBar
