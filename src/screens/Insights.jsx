@@ -1,7 +1,7 @@
-// Insights — formerly Analytics. Adds the streak/YTD hero up top so the
-// numbers from the home strip get a proper detail view, and keeps the
-// existing missed-rewards / recommendations content below.
-import { useState } from 'react';
+// Insights — formerly Analytics. Streak/YTD hero + period chips, plus the
+// stacked-bar-by-issuer view, the per-category "Where it came from"
+// breakdown, and a coral expiring-credits alert at the bottom.
+import { useState, useMemo } from 'react';
 import ScreenHeader from '../components/ScreenHeader.jsx';
 import Folio from '../components/Folio.jsx';
 import Recommendations from '../components/Recommendations.jsx';
@@ -10,6 +10,10 @@ const CATEGORY_LABELS = {
   groceries: 'Groceries', dining: 'Dining', gas: 'Gas',
   travel: 'Travel', online_shopping: 'Online', streaming: 'Streaming',
   other: 'Everything else',
+};
+const CATEGORY_ICONS = {
+  groceries: '🛒', dining: '🍝', gas: '⛽',
+  travel: '✈︎', online_shopping: '📦', streaming: '🎬', other: '✦',
 };
 
 function brandKey(card) {
@@ -22,10 +26,42 @@ function brandKey(card) {
   return 'default';
 }
 
-export default function InsightsScreen({ insights, recommendations, cards, streak }) {
+function brandSegClass(brand) {
+  if (brand === 'amex') return 'seg-amex';
+  if (brand === 'chase') return 'seg-chase';
+  if (brand === 'capone' || brand === 'savor') return 'seg-savor';
+  return 'seg-other';
+}
+
+function brandShortName(brand) {
+  return ({ amex: 'Gold', chase: 'Chase', capone: 'Savor', citi: 'Citi', discover: 'Discover' })[brand] || 'Other';
+}
+
+export default function InsightsScreen({ insights, recommendations, cards, credits, streak }) {
   const [period, setPeriod] = useState('YTD');
   if (!insights) return <div className="screen"><div className="loading">Loading…</div></div>;
   const { transactions, total_missed_rewards, user_cards } = insights;
+
+  // Aggregate earned rewards per issuer brand from transactions, where the
+  // user hit a card with rate > 1 the brand gets credit for the spread.
+  const { byBrand, byCategory, totalEarned } = useMemo(() => {
+    const byBrand = {};
+    const byCategory = {};
+    let totalEarned = 0;
+    for (const t of transactions || []) {
+      if (!t.used_card) continue;
+      const brand = brandKey(t.used_card);
+      const earned = (t.used_card.rate / 100) * t.amount;
+      byBrand[brand] = (byBrand[brand] || 0) + earned;
+      const catKey = t.category || 'other';
+      const cat = byCategory[catKey] || { value: 0, brand };
+      cat.value += earned;
+      cat.brand = brand;
+      byCategory[catKey] = cat;
+      totalEarned += earned;
+    }
+    return { byBrand, byCategory, totalEarned };
+  }, [transactions]);
 
   if (!user_cards.length) {
     return (
@@ -44,11 +80,25 @@ export default function InsightsScreen({ insights, recommendations, cards, strea
   const ytdYear = streak?.ytd_year || new Date().getFullYear();
   const streakWeeks = streak?.streak || 0;
 
+  // Pick the most-urgent unspent credit for the coral alert
+  let urgent = null;
+  for (const c of credits?.cards || []) {
+    for (const cr of c.credits || []) {
+      if (cr.captured) continue;
+      if (urgent && cr.value <= urgent.value) continue;
+      urgent = { ...cr, card_name: c.card_name };
+    }
+  }
+
+  // Sort categories by earned value
+  const catRows = Object.entries(byCategory)
+    .sort((a, b) => b[1].value - a[1].value)
+    .slice(0, 4);
+
   return (
     <div className="screen">
       <ScreenHeader eyebrow={`Insights · ${period}`} title="Insights" em="on track." right={<Folio n={8} />} />
 
-      {/* Streak + YTD hero — same chips as Home, displayed bigger */}
       <div className="home-stats" style={{ marginBottom: 20 }}>
         <div className="home-stat streak">
           <span className="flame">🔥</span>
@@ -84,9 +134,68 @@ export default function InsightsScreen({ insights, recommendations, cards, strea
         </div>
       </div>
 
+      {/* Stacked bar — split by issuer */}
+      {totalEarned > 0 && (
+        <div className="insights-bar">
+          <div className="stacked-bar">
+            {Object.entries(byBrand).map(([brand, v]) => (
+              <span
+                key={brand}
+                className={brandSegClass(brand)}
+                style={{ flex: v }}
+              />
+            ))}
+          </div>
+          <div className="legend">
+            {Object.entries(byBrand).map(([brand, v]) => (
+              <span key={brand} className="key">
+                <span className={`swatch ${brandSegClass(brand)}`} />
+                <b>{brandShortName(brand)}</b> ${Math.round(v)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Where it came from — per category */}
+      {catRows.length > 0 && (
+        <>
+          <div className="fancy-rule" style={{ margin: '22px 0 8px' }}><span className="glyph">❋</span></div>
+          <div className="metric-eyebrow" style={{ marginBottom: 8 }}>Where it came from</div>
+          <div className="cat-breakdown">
+            {catRows.map(([cat, info]) => {
+              const pct = totalEarned > 0 ? Math.round((info.value / totalEarned) * 100) : 0;
+              return (
+                <div className="row" key={cat}>
+                  <div className="icon">{CATEGORY_ICONS[cat] || '✦'}</div>
+                  <div style={{ flex: 1 }}>
+                    <div className="name">{CATEGORY_LABELS[cat] || cat}</div>
+                    <div className="bar">
+                      <span className={brandSegClass(info.brand)} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                  <div className="v">${Math.round(info.value)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Coral expiring alert */}
+      {urgent && (
+        <div className="expiring-alert">
+          <div className="icon">⏰</div>
+          <div style={{ flex: 1 }}>
+            <div className="head">{urgent.name} · ${urgent.value} unused</div>
+            <div className="sub">{urgent.card_name} · don't leave it on the table.</div>
+          </div>
+        </div>
+      )}
+
       {/* Recent transactions */}
       {transactions.length > 0 && (
-        <div className="card">
+        <div className="card" style={{ marginTop: 18 }}>
           <h2>Recent transactions</h2>
           {transactions.slice(0, 12).map(t => {
             const usedBrand = brandKey(t.used_card);
