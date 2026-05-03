@@ -216,6 +216,25 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected, 
 
       {ranked.length > 0 && (
         <>
+          {/* Mini-map — chunky-bordered SVG with card-color pins and a
+              pulsing user dot. Decorative; gives the screen a sense of place. */}
+          <div className="home-map" aria-hidden="true">
+            <svg viewBox="0 0 340 88">
+              <path d="M0 30 Q 120 50 220 22 T 340 52" stroke="var(--haze)" strokeWidth="12" fill="none" />
+              <path d="M60 0 Q 80 50 120 88" stroke="var(--haze)" strokeWidth="9" fill="none" />
+              <path d="M200 0 L 240 88" stroke="var(--haze)" strokeWidth="9" fill="none" />
+              <circle cx="80"  cy="46" r="7" fill="var(--amex)"  stroke="var(--ink)" strokeWidth="2" />
+              <circle cx="170" cy="30" r="7" fill="var(--savor)" stroke="var(--ink)" strokeWidth="2" />
+              <circle cx="250" cy="42" r="7" fill="var(--amex)"  stroke="var(--ink)" strokeWidth="2" />
+              <circle cx="300" cy="65" r="7" fill="var(--chase)" stroke="var(--ink)" strokeWidth="2" />
+              <circle cx="150" cy="60" r="12" fill="var(--sky)" stroke="var(--ink)" strokeWidth="2.5">
+                <animate attributeName="r" values="12;16;12" dur="2.4s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="1;0.7;1" dur="2.4s" repeatCount="indefinite" />
+              </circle>
+              <circle cx="150" cy="60" r="4.5" fill="var(--ink)" />
+            </svg>
+          </div>
+
           <div className="merchants-list">
             {ranked.map((m, i) => {
               const card = m.top?.card;
@@ -323,6 +342,20 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected, 
         <ArrivalDetail
           merchant={openMerchant}
           onClose={() => setOpenMerchant(null)}
+          onRecord={() => { setOpenMerchant(null); recordSwipe(openMerchant); }}
+          onShare={() => {
+            const m = openMerchant;
+            const card = m.top.card;
+            setOpenMerchant(null);
+            go?.('compose', {
+              card_id: card.id,
+              card_name: card.name,
+              merchant: m.name,
+              location: m.sub,
+              category: m.category,
+              rate: m.top.rate,
+            });
+          }}
         />
       )}
     </div>
@@ -361,60 +394,88 @@ function SearchResult({ query, category, recommendation, hasMatchedCards }) {
   );
 }
 
-// Merchant arrival detail — visual reference: mocks/geo.jsx · GeoB_Banner.
-function ArrivalDetail({ merchant, onClose }) {
-  const { name, sub, top, runner, uplift } = merchant;
+// Merchant arrival detail — modeled on prototype's GeoBanner.
+// Pin banner + rotating card sticker with floating multiplier badge +
+// alt-card row + two CTAs (record swipe / share without recording).
+function ArrivalDetail({ merchant, onClose, onRecord, onShare }) {
+  const { name, sub, top, runner, uplift, basket } = merchant;
   if (!top) return null;
   const card = top.card;
+  const issuer = (card?.issuer || '').toLowerCase();
+  const unit = issuer.includes('capital one') && !issuer.includes('venture') ? 'CASH' : 'PTS';
+  const last4 = card.last4 || '••04';
   return (
     <div className="arrival-overlay" onClick={onClose}>
       <div className="arrival-sheet" onClick={e => e.stopPropagation()}>
         <button className="arrival-close" onClick={onClose} aria-label="Close">×</button>
 
-        <div className="arrival-banner">
-          <div className="arrival-pin">📍</div>
-          <div>
-            <div className="arrival-eyebrow">You're at</div>
-            <div className="arrival-merchant">{name}</div>
+        <div className="arrival-pin-banner">
+          <div className="pin-icon">📍<span className="dot" /></div>
+          <div style={{ flex: 1 }}>
+            <div className="who-eyebrow">You're at</div>
+            <div className="who-name">{name}</div>
           </div>
+          <div className="dist">{(sub || '').includes(' · ') ? sub.split(' · ').pop() : ''}</div>
         </div>
 
         <div className="arrival-body">
           <div className="arrival-section-label">Swipe this one</div>
-          <div className={`arrival-card ${brandKey(card)}`}>
-            <CardArt card={card} size="md" />
-            <div>
-              <div className="result-name">{card.name}</div>
-              <div className="big-rate">
-                {top.rate}<span className="x">×</span>{' '}
-                <span className="result-cat">{sub.toLowerCase()}</span>
+          <div className="swipe-card-stage">
+            <div className={`swipe-card-sticker ${brandKey(card)}`}>
+              <div className="chip-rect" />
+              <div className="issuer-line">
+                {issuer.includes('american express') ? 'American Express' :
+                 issuer.includes('chase') ? 'Chase' :
+                 issuer.includes('capital one') ? 'Capital One' :
+                 card.issuer || 'Card'}
+              </div>
+              <div>
+                <div className="pan">•••• •••• •••• {String(last4).replace('••', '')}</div>
+                <div className="card-name">{card.name}</div>
               </div>
             </div>
-            <div className="arrival-stamp">
-              <span className="stamp-num">{top.rate}×</span>
-              <span className="stamp-unit">{(card?.issuer || '').toLowerCase().includes('capital one') ? 'CASH' : 'PTS'}</span>
+            <div className="mult-badge">
+              <span className="v">{top.rate}{unit === 'CASH' ? '%' : '×'}</span>
+              <span className="u">{unit}</span>
             </div>
           </div>
 
-          <div className="arrival-uplift">
-            Based on a typical basket {merchant.basket ? `(~$${merchant.basket})` : ''},
-            that's roughly <b>+${uplift.toFixed(uplift < 10 ? 2 : 0)}</b> more than your runner-up.
+          <div style={{ marginTop: 22, fontSize: 18, fontWeight: 800, lineHeight: 1.25, letterSpacing: -0.3 }}>
+            {(merchant.category || sub || 'this').replace('_', ' ')} earn{' '}
+            <span style={{ background: 'var(--lemon)', padding: '0 6px', borderRadius: 6 }}>
+              {top.rate}{unit === 'CASH' ? '% cash' : '× points'}
+            </span>{' '}on {card.name.split(' ').slice(-2).join(' ')}.
+          </div>
+          <div className="arrival-uplift" style={{ marginTop: 6 }}>
+            Based on a typical basket {basket ? `(~$${basket})` : ''}, that's roughly{' '}
+            <b>+${uplift.toFixed(uplift < 10 ? 2 : 0)}</b> more than your runner-up.
           </div>
 
           {runner && (
             <>
-              <div className="arrival-section-label">Not {card.name.split(' ')[0]}? Next best:</div>
-              <div className="alt-row">
-                <div className={`alt-tile ${brandKey(runner.card)}`}>
+              <div className="arrival-section-label" style={{ marginTop: 18 }}>
+                Not {card.name.split(' ')[0]}? Next best:
+              </div>
+              <div className="alt-cards">
+                <div className="alt">
                   <span className={`chip chip-sm ${brandKey(runner.card)}`} aria-hidden="true" />
-                  <div>
-                    <div className="alt-name">{runner.card.name}</div>
-                    <div className="alt-rate">{multLabel(runner.card, runner.rate)}</div>
+                  <div className="alt-name" style={{ marginTop: 6 }}>{runner.card.name}</div>
+                  <div className="alt-rate" style={{ color: 'var(--mint-dk)', fontWeight: 800 }}>
+                    {multLabel(runner.card, runner.rate)}
                   </div>
                 </div>
               </div>
             </>
           )}
+
+          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <button className="btn positive" onClick={onRecord}>
+              ✓ Just swiped — record it
+            </button>
+            <button className="btn secondary" onClick={onShare}>
+              📣 Share without recording
+            </button>
+          </div>
         </div>
       </div>
     </div>
