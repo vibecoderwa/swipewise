@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import PlaidConnect from '../components/PlaidConnect.jsx';
+import Folio from '../components/Folio.jsx';
 import { api } from '../lib/api.js';
 
 // Onboarding — Plaid-first with manual fallback (FR-ONB-01, FR-ONB-02).
@@ -39,16 +40,19 @@ function Choose({ onPickManual, onDone }) {
       <div className="auth-top">
         <div className="step-meta">Step 3 of 3</div>
         <button className="text-link" onClick={onDone}>Skip for now</button>
+        <div style={{ marginLeft: 8 }}><Folio n={4} /></div>
       </div>
 
-      <div className="pill" style={{ marginTop: 12, background: 'var(--lemon)', borderColor: 'var(--ink)' }}>let's add your cards</div>
-      <h1 className="hero-q" style={{ marginTop: 14 }}>
-        Bring your<br/>wallet, not your<br/>card numbers.
-      </h1>
-      <p className="hero-q-sub">
-        Connect your bank through Plaid. We read which cards you have and categorize
-        your spend. <b>Read-only.</b> No card numbers stored.
-      </p>
+      <div className="stagger">
+        <span className="pill-chip" style={{ marginTop: 12 }}>let's add your cards</span>
+        <h1 className="hero-q" style={{ marginTop: 14 }}>
+          Bring your<br/>wallet, not your<br/>card numbers.
+        </h1>
+        <p className="hero-q-sub">
+          Connect your bank through Plaid. We read which cards you have and categorize
+          your spend. <b>Read-only.</b> <i>No numbers stored.</i>
+        </p>
+      </div>
 
       <div className="plaid-cta">
         <div className="plaid-cta-head">
@@ -137,14 +141,17 @@ function ManualPick({ onBack, onDone }) {
       <div className="auth-top">
         <button className="back-btn" onClick={onBack} aria-label="Back">‹</button>
         <div className="step-meta">Add manually</div>
+        <div style={{ marginLeft: 'auto' }}><Folio n={5} /></div>
       </div>
 
-      <h1 className="hero-q" style={{ marginTop: 24 }}>
-        Pick the cards<br/>in your wallet.
-      </h1>
-      <p className="hero-q-sub">
-        {selected.size} selected · tap to toggle
-      </p>
+      <div className="stagger">
+        <h1 className="hero-q" style={{ marginTop: 24 }}>
+          Pick the cards<br/>in your wallet.
+        </h1>
+        <p className="hero-q-sub">
+          {selected.size} selected · <i>tap to toggle</i>
+        </p>
+      </div>
 
       {error && <div className="error">{error}</div>}
 

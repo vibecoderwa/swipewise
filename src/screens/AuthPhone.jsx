@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { api } from '../lib/api.js';
+import Folio from '../components/Folio.jsx';
+import Marginalia from '../components/Marginalia.jsx';
 
 // Phone-number sign-in (FR-AUTH-01).
 // Visual reference: mocks/auth.jsx · AuthA_Phone.
@@ -38,18 +40,21 @@ export default function AuthPhone({ onBack, onSent }) {
       <div className="auth-top">
         <button className="back-btn" onClick={onBack} aria-label="Back">‹</button>
         <div className="step-meta">Step 1 of 3</div>
+        <div style={{ marginLeft: 'auto' }}><Folio n={2} /></div>
       </div>
 
-      <div className="pill info" style={{ marginTop: 12 }}>sign in · no password</div>
-      <h1 className="hero-q" style={{ marginTop: 14 }}>
-        What's your<br/>number, boss<span className="q-mark">?</span>
-      </h1>
-      <p className="hero-q-sub">
-        We'll text you a code. No passwords to forget. No "your account has been
-        breached" emails at 3am.
-      </p>
+      <div className="stagger">
+        <span className="pill-chip mint" style={{ marginTop: 12 }}>sign in · no password</span>
+        <h1 className="hero-q" style={{ marginTop: 14 }}>
+          What's your<br/>number, boss<span className="q-mark">?</span>
+        </h1>
+        <p className="hero-q-sub">
+          We'll text you a code. No passwords to forget. <i>No "your account has been
+          breached" emails at 3am.</i>
+        </p>
+      </div>
 
-      <div className="phone-row">
+      <div className="phone-row" style={{ position: 'relative' }}>
         <div className="cc-pill">🇺🇸 +1 ▾</div>
         <input
           className="phone-input"
@@ -60,6 +65,11 @@ export default function AuthPhone({ onBack, onSent }) {
           onChange={e => setPhone(e.target.value)}
           autoFocus
         />
+        {!phone && (
+          <Marginalia dir="right" rotate={-4} style={{ top: -28, right: 4 }}>
+            any U.S. number works
+          </Marginalia>
+        )}
       </div>
       <div className="phone-helper">🔒 We never share your number.</div>
 

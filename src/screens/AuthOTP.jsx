@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api.js';
+import Folio from '../components/Folio.jsx';
 
 // OTP verification (FR-AUTH-02).
 // Six auto-advancing digit fields, paste-to-fill, 60s resend timer.
@@ -100,15 +101,18 @@ export default function AuthOTP({ phone, demoCode, onBack, onVerified }) {
       <div className="auth-top">
         <button className="back-btn" onClick={onBack} aria-label="Back">‹</button>
         <div className="step-meta">Step 2 of 3</div>
+        <div style={{ marginLeft: 'auto' }}><Folio n={3} /></div>
       </div>
 
-      <div className="pill info" style={{ marginTop: 12 }}>check your texts</div>
-      <h1 className="hero-q" style={{ marginTop: 14 }}>
-        Six digits, and<br/>we're in<span className="q-mark">.</span>
-      </h1>
-      <p className="hero-q-sub">
-        Code sent to <b>{maskPhone(phone)}</b>. Expires in 10:00.
-      </p>
+      <div className="stagger">
+        <span className="pill-chip sky" style={{ marginTop: 12 }}>check your texts</span>
+        <h1 className="hero-q" style={{ marginTop: 14 }}>
+          Six digits, and<br/>we're in<span className="q-mark">.</span>
+        </h1>
+        <p className="hero-q-sub">
+          Code sent to <b>{maskPhone(phone)}</b>. Expires in 10:00.
+        </p>
+      </div>
 
       <div className="otp-row" onPaste={onPaste}>
         {digits.map((d, i) => (
@@ -136,11 +140,11 @@ export default function AuthOTP({ phone, demoCode, onBack, onVerified }) {
       </div>
 
       {currentDemo && (
-        <div className="demo-sms">
-          <div className="demo-head">SWIPEWISE</div>
-          <div>
-            Your code is <b className="demo-code">{currentDemo}</b>.
-            Don't share it with anyone. Not even your dog.
+        <div className="demo-sms-bubble">
+          <div className="head">SWIPEWISE</div>
+          <div className="body">
+            Your code is <b>{currentDemo}</b>. Don't share it with anyone.{' '}
+            <i style={{ color: 'var(--graphite)', fontFamily: 'var(--font-display)' }}>Not even your dog.</i>
           </div>
         </div>
       )}
