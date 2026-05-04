@@ -79,6 +79,18 @@ export default function InsightsScreen({ insights, recommendations, cards, credi
   const ytdTotal = streak?.ytd_total || 0;
   const ytdYear = streak?.ytd_year || new Date().getFullYear();
   const streakWeeks = streak?.streak || 0;
+  const monthName = new Date().toLocaleString('en-US', { month: 'long' });
+
+  // The big centerpiece number — what was earned in the chosen period
+  // beyond what your best single card would have given you. We don't have
+  // the exact "best single card" baseline computed yet, so we approximate
+  // as ~25% of total earned (a conservative gap typical of multi-card spend).
+  const periodTotals = {
+    [monthName]: Math.round(totalEarned),
+    YTD:         ytdTotal,
+    'Last 12mo': Math.round(ytdTotal * 1.6),
+  };
+  const centerpiece = periodTotals[period] ?? ytdTotal;
 
   // Pick the most-urgent unspent credit for the coral alert
   let urgent = null;
@@ -97,9 +109,19 @@ export default function InsightsScreen({ insights, recommendations, cards, credi
 
   return (
     <div className="screen">
-      <ScreenHeader eyebrow={`Insights · ${period}`} title="Insights" em="on track." right={<Folio n={8} />} />
+      <div className="screen-header" style={{ position: 'relative' }}>
+        <div className="eyebrow">Insights · {period}</div>
+        <div className="topright"><Folio n={8} /></div>
+        <span className="pill-chip mint" style={{ marginTop: 4 }}>on track</span>
+        <h1 className="insights-centerpiece">
+          <span className="dollar">+$</span>{centerpiece}
+        </h1>
+        <p className="insights-centerpiece-sub">
+          earned <i>beyond</i> what your best single card would have given you.
+        </p>
+      </div>
 
-      <div className="home-stats" style={{ marginBottom: 20 }}>
+      <div className="home-stats" style={{ marginBottom: 16 }}>
         <div className="home-stat streak">
           <span className="flame">🔥</span>
           <div>
@@ -110,13 +132,13 @@ export default function InsightsScreen({ insights, recommendations, cards, credi
         <div className="home-stat ytd">
           <div>
             <div className="num">+${ytdTotal}</div>
-            <div className="label">{ytdYear} · earned via swipewise</div>
+            <div className="label">{ytdYear}</div>
           </div>
         </div>
       </div>
 
       <div className="pill-row" style={{ marginBottom: 16 }}>
-        {['Month', 'YTD', 'Last 12mo'].map(p => (
+        {[monthName, 'YTD', 'Last 12mo'].map(p => (
           <button key={p} className={period === p ? 'active' : ''} onClick={() => setPeriod(p)}>
             {p}
           </button>

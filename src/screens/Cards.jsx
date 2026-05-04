@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { api } from '../lib/api.js';
 import ScreenHeader from '../components/ScreenHeader.jsx';
 import Folio from '../components/Folio.jsx';
-import CardArt from '../components/CardArt.jsx';
+import CardSticker from '../components/CardSticker.jsx';
 import { categoryLabel } from '../lib/merchantInfer.js';
 
 const TOP_CATEGORIES = ['groceries', 'dining', 'travel', 'gas', 'online_shopping', 'streaming'];
@@ -95,7 +95,9 @@ export default function CardsScreen({ insights, credits }) {
               onClick={() => setOpenId(isOpen ? null : card.id)}
             >
               <div className="row">
-                <CardArt card={card} size="sm" />
+                <span className="card-sticker-mini">
+                  <CardSticker card={card} last4={card.last4 || '••04'} rotate={isOpen ? -3 : 0} />
+                </span>
                 <div className="meta">
                   <div className="lab">This month</div>
                   <div className="num">+${monthEarned}</div>
