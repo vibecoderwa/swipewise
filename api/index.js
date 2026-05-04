@@ -571,12 +571,16 @@ app.get('/api/prefs', (req, res) => {
     notif_expiring: !!p.notif_expiring,
     notif_weekly: !!p.notif_weekly,
     cpp: p.cpp,
+    auto_share: !!p.auto_share,
+    suggest_tags: !!p.suggest_tags,
+    show_badges: !!p.show_badges,
   });
 });
 app.post('/api/prefs', (req, res) => {
   const userId = getUserId(req);
   const allowed = ['default_visibility', 'reduce_patterns', 'notif_arrival',
-                   'notif_expiring', 'notif_weekly', 'cpp'];
+                   'notif_expiring', 'notif_weekly', 'cpp',
+                   'auto_share', 'suggest_tags', 'show_badges'];
   const patch = {};
   for (const k of allowed) if (k in (req.body || {})) patch[k] = req.body[k];
   const p = setPrefs(userId, patch);

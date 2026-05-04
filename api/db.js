@@ -137,16 +137,23 @@ db.exec(`
     notif_expiring INTEGER NOT NULL DEFAULT 1,
     notif_weekly INTEGER NOT NULL DEFAULT 0,
     cpp REAL NOT NULL DEFAULT 1.5,
+    auto_share INTEGER NOT NULL DEFAULT 0,
+    suggest_tags INTEGER NOT NULL DEFAULT 1,
+    show_badges INTEGER NOT NULL DEFAULT 1,
     seeded INTEGER NOT NULL DEFAULT 0,
     updated_at INTEGER NOT NULL DEFAULT 0
   );
 `);
 
-// Lightweight migration for older dbs that pre-date the user_prefs.seeded flag
+// Lightweight migrations for older dbs
 try {
   const cols = db.prepare("PRAGMA table_info(user_prefs)").all();
-  if (cols.length && !cols.find(c => c.name === 'seeded')) {
-    db.exec('ALTER TABLE user_prefs ADD COLUMN seeded INTEGER NOT NULL DEFAULT 0');
+  const colNames = new Set(cols.map(c => c.name));
+  if (cols.length) {
+    if (!colNames.has('seeded'))       db.exec('ALTER TABLE user_prefs ADD COLUMN seeded INTEGER NOT NULL DEFAULT 0');
+    if (!colNames.has('auto_share'))   db.exec('ALTER TABLE user_prefs ADD COLUMN auto_share INTEGER NOT NULL DEFAULT 0');
+    if (!colNames.has('suggest_tags')) db.exec('ALTER TABLE user_prefs ADD COLUMN suggest_tags INTEGER NOT NULL DEFAULT 1');
+    if (!colNames.has('show_badges'))  db.exec('ALTER TABLE user_prefs ADD COLUMN show_badges INTEGER NOT NULL DEFAULT 1');
   }
 } catch (_) { /* ignore */ }
 
@@ -199,13 +206,16 @@ export function setPrefs(userId, patch) {
   db.prepare(`
     UPDATE user_prefs SET
       default_visibility = ?, reduce_patterns = ?, notif_arrival = ?,
-      notif_expiring = ?, notif_weekly = ?, cpp = ?, seeded = ?, updated_at = ?
+      notif_expiring = ?, notif_weekly = ?, cpp = ?,
+      auto_share = ?, suggest_tags = ?, show_badges = ?,
+      seeded = ?, updated_at = ?
     WHERE user_id = ?
   `).run(
     merged.default_visibility, merged.reduce_patterns ? 1 : 0,
     merged.notif_arrival ? 1 : 0, merged.notif_expiring ? 1 : 0,
-    merged.notif_weekly ? 1 : 0, merged.cpp, merged.seeded ? 1 : 0,
-    merged.updated_at, userId
+    merged.notif_weekly ? 1 : 0, merged.cpp,
+    merged.auto_share ? 1 : 0, merged.suggest_tags ? 1 : 0, merged.show_badges ? 1 : 0,
+    merged.seeded ? 1 : 0, merged.updated_at, userId
   );
   return getPrefs(userId);
 }
