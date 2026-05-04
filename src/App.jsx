@@ -10,6 +10,7 @@ import SettingsScreen from './screens/Settings.jsx';
 import FriendsScreen from './screens/Friends.jsx';
 import ComposeScreen from './screens/Compose.jsx';
 import WinMoment from './screens/WinMoment.jsx';
+import MomentsScreen from './screens/Moments.jsx';
 import Landing from './screens/Landing.jsx';
 import AuthPhone from './screens/AuthPhone.jsx';
 import AuthOTP from './screens/AuthOTP.jsx';
@@ -190,13 +191,13 @@ export default function App() {
   }
 
   const hasAccounts = accounts.length > 0 || (insights?.user_cards?.length || 0) > 0;
-  const hideTabBar = screen === 'compose' || screen === 'winmoment';
+  const hideTabBar = screen === 'compose' || screen === 'winmoment' || screen === 'moments';
 
   // Screens that show on a dark background — the back button switches to its
   // light-on-dark variant for those.
   const isDarkScreen = false;
 
-  const screenMode = (screen === 'compose' || screen === 'winmoment') ? 'sheet' : 'page';
+  const screenMode = (screen === 'compose' || screen === 'winmoment' || screen === 'moments') ? 'sheet' : 'page';
 
   return (
     <div className="app">
@@ -270,6 +271,9 @@ export default function App() {
           go={go}
           onClaim={refresh}
         />
+      )}
+      {screen === 'moments' && (
+        <MomentsScreen go={go} />
       )}
 
       </MotionScreen>
