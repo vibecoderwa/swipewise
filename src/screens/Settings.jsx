@@ -37,7 +37,19 @@ function Row({ label, sub, right, onClick }) {
   );
 }
 
-export default function SettingsScreen({ accounts, cards, syncing, onSync, onChange, onSignOut }) {
+function Pill({ children, tone = 'mint' }) {
+  return <span className={`pill-chip ${tone}`}>{children}</span>;
+}
+
+function timeAgoShort(ts) {
+  const d = Date.now() - ts;
+  if (d < 60_000) return 'just now';
+  if (d < 3_600_000) return `${Math.floor(d / 60_000)} min ago`;
+  if (d < 86_400_000) return `${Math.floor(d / 3_600_000)} h ago`;
+  return `${Math.floor(d / 86_400_000)} d ago`;
+}
+
+export default function SettingsScreen({ accounts, cards, syncing, onSync, onChange, onSignOut, go }) {
   const phone = api.getPhone();
   const [prefs, setPrefs] = useState(null);
 
@@ -58,44 +70,65 @@ export default function SettingsScreen({ accounts, cards, syncing, onSync, onCha
     notif_arrival: true,
     notif_expiring: true,
     notif_weekly: false,
+    cpp: 1.5,
+    auto_share: false,
+    suggest_tags: true,
+    show_badges: true,
   };
+
+  // Connections summary line
+  const plaidAccounts = accounts.filter(a => a.matched_card);
+  const lastSyncTs = accounts[0]?.last_sync_at;
+  const connectionSub = accounts.length === 0
+    ? 'Read-only via Plaid · not connected'
+    : `${accounts[0]?.institution_name || 'Bank'} · ${plaidAccounts.length || accounts.length} account${(plaidAccounts.length || accounts.length) === 1 ? '' : 's'}${lastSyncTs ? ' · synced ' + timeAgoShort(lastSyncTs) : ''}`;
 
   return (
     <div className="screen">
-      <ScreenHeader eyebrow="Preferences" title="Settings" right={<Folio n={9} />} />
+      <div className="screen-header" style={{ position: 'relative' }}>
+        <div className="eyebrow">Preferences</div>
+        <h1 style={{ fontSize: 38, lineHeight: 0.98 }}>
+          A few <em>knobs</em><br/>for the picky.
+        </h1>
+        <div className="topright"><Folio n={9} /></div>
+      </div>
 
-      {/* Account */}
       <Group title="Account">
-        {phone && <Row label="Phone" sub={`${phone} · verified`} right={<span style={{ fontSize: 12, color: 'var(--mint-dk)', fontWeight: 700 }}>✓</span>} />}
+        {phone && (
+          <Row label="Phone"
+               sub={`${phone} · verified`}
+               right={<span style={{ fontSize: 12, color: 'var(--mint-dk)', fontWeight: 700 }}>✓</span>} />
+        )}
         <Row label="Sign out" sub="Disconnect this device"
              onClick={onSignOut}
              right={<span className="chev">›</span>} />
       </Group>
 
-      {/* Connections */}
       <Group title="Connections">
-        <Row label="Bank connection"
-             sub={accounts.length > 0
-               ? `${accounts.length} account${accounts.length === 1 ? '' : 's'} via Plaid`
-               : 'Read-only via Plaid'}
-             right={
-               <button className="brand-action" onClick={onSync} disabled={syncing}>
-                 {syncing ? 'Syncing…' : 'Sync'}
-               </button>
-             } />
-        <div className="s-row">
+        <Row label="Plaid"
+             sub={connectionSub}
+             right={accounts.length > 0
+               ? <Pill tone="mint">connected</Pill>
+               : <Pill tone="cream">not connected</Pill>} />
+        <Row label="Sync transactions"
+             sub={syncing ? 'Pulling latest…' : 'Pull the latest from your bank'}
+             onClick={syncing ? null : onSync}
+             right={<span className="chev">{syncing ? '…' : '↻'}</span>} />
+        <Row label="Add another bank"
+             onClick={() => {}} /* PlaidConnect lives just below */
+             right={<span style={{ fontSize: 18, fontWeight: 800 }}>+</span>} />
+        <div className="s-row" style={{ paddingTop: 0 }}>
           <div className="text" style={{ width: '100%' }}>
-            {accounts.length === 0 ? (
-              <div className="muted small" style={{ marginBottom: 10 }}>No accounts connected yet.</div>
-            ) : (
-              <AccountList accounts={accounts} cards={cards} onChange={onChange} />
+            {accounts.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <AccountList accounts={accounts} cards={cards} onChange={onChange} />
+              </div>
             )}
             <PlaidConnect onConnected={onChange} />
           </div>
         </div>
       </Group>
 
-      {/* Notifications */}
       <Group title="Notifications">
         <Row label="Arrival pings" sub="Tell me when I'm at a known merchant"
              right={<Toggle on={p.notif_arrival} onClick={() => patch('notif_arrival', !p.notif_arrival)} />} />
@@ -105,7 +138,6 @@ export default function SettingsScreen({ accounts, cards, syncing, onSync, onCha
              right={<Toggle on={p.notif_weekly} onClick={() => patch('notif_weekly', !p.notif_weekly)} />} />
       </Group>
 
-      {/* Social */}
       <Group title="Social">
         <div className="s-row">
           <div className="text" style={{ width: '100%' }}>
@@ -124,11 +156,48 @@ export default function SettingsScreen({ accounts, cards, syncing, onSync, onCha
             </div>
           </div>
         </div>
+        <Row label="Auto-share my swipes"
+             sub={p.auto_share
+               ? 'Posts go up automatically — no prompt.'
+               : "We'll suggest, you decide."}
+             right={<Toggle on={p.auto_share} onClick={() => patch('auto_share', !p.auto_share)} />} />
+        <Row label="Suggest friend tags"
+             sub="Based on past co-swipes at the same place"
+             right={<Toggle on={p.suggest_tags} onClick={() => patch('suggest_tags', !p.suggest_tags)} />} />
+        <Row label="Show multiplier badges"
+             sub="Big 4× and 5× on your posts"
+             right={<Toggle on={p.show_badges} onClick={() => patch('show_badges', !p.show_badges)} />} />
+        <Row label="Manage friends"
+             sub="4 friends · 2 pending"
+             onClick={() => go?.('friends')}
+             right={<span className="chev">›</span>} />
       </Group>
 
-      {/* Honest privacy block — explicitly states what's shared, what isn't,
-          and what your network can still infer from "amount-hidden" posts.
-          The "Reduce pattern visibility" toggle is the practical lever. */}
+      <Group title="Preferences">
+        <div className="s-row">
+          <div className="text" style={{ width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <div className="label">Cents per point</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 900 }}>
+                {p.cpp.toFixed(1)}¢
+              </div>
+            </div>
+            <div className="sub" style={{ marginTop: 2 }}>
+              How you value the points you earn. Higher means we'll push points cards harder.
+            </div>
+            <input
+              type="range" min={1.0} max={3.0} step={0.1}
+              value={p.cpp}
+              onChange={e => patch('cpp', parseFloat(e.target.value))}
+              style={{ width: '100%', marginTop: 12, accentColor: 'var(--lemon-dk)' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--dim)', marginTop: 4 }}>
+              <span>cash-only</span><span>balanced</span><span>points-maxxer</span>
+            </div>
+          </div>
+        </div>
+      </Group>
+
       <Group title="Privacy">
         <div className="privacy-block">
           <div className="h">What we share when you post</div>
@@ -158,9 +227,20 @@ export default function SettingsScreen({ accounts, cards, syncing, onSync, onCha
             : 'Recommended if your feed is public or has weak ties.'}
           right={<Toggle on={p.reduce_patterns} onClick={() => patch('reduce_patterns', !p.reduce_patterns)} />}
         />
-        <Row label="Export my data" right={<span className="chev">›</span>} />
+        <Row label="See myself as a friend would"
+             sub="Preview the public version of your profile"
+             onClick={() => {}}
+             right={<span className="chev">›</span>} />
+        <Row label="Export my data" onClick={() => {}} right={<span className="chev">›</span>} />
         <Row label="Delete account" sub="Permanent, no take-backs"
              right={<span style={{ fontSize: 12, color: 'var(--coral-dk)', fontWeight: 700 }}>danger</span>} />
+      </Group>
+
+      <Group title="Future">
+        <Row label="Moments preview"
+             sub="iOS chrome mocks — push, Dynamic Island, lock & home widgets"
+             onClick={() => go?.('moments')}
+             right={<span className="chev">›</span>} />
       </Group>
 
       <Group title="Share">

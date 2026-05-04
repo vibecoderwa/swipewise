@@ -115,7 +115,12 @@ export default function FriendsScreen({ feed, go, onRefresh }) {
   const pending = feed.pending || [];
   const posts = feed.posts || [];
 
-  const visible = posts.filter(p => filter === 'you' ? p.is_you : true);
+  const dayAgo = Date.now() - 24 * 3600 * 1000;
+  const visible = posts.filter(p => {
+    if (filter === 'you') return p.is_you;
+    if (filter === 'today') return p.created_at >= dayAgo;
+    return true;
+  });
 
   async function shareNow(pending) {
     await api.createPost({
@@ -156,8 +161,9 @@ export default function FriendsScreen({ feed, go, onRefresh }) {
 
       <div className="pill-row" style={{ marginBottom: 14 }}>
         {[
-          { id: 'all', l: 'All' },
-          { id: 'you', l: 'You' },
+          { id: 'all',   l: 'All' },
+          { id: 'today', l: 'Today' },
+          { id: 'you',   l: 'You' },
         ].map(f => (
           <button
             key={f.id}
