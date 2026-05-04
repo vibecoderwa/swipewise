@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 import { api } from '../lib/api.js';
 
-export default function PlaidConnect({ onConnected }) {
+export default function PlaidConnect({ onConnected, onBusyChange }) {
   const [linkToken, setLinkToken] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -15,18 +15,23 @@ export default function PlaidConnect({ onConnected }) {
     return () => { alive = false; };
   }, []);
 
+  function setBusyState(b) {
+    setBusy(b);
+    onBusyChange?.(b);
+  }
+
   const { open, ready } = usePlaidLink({
     token: linkToken,
     onSuccess: async (public_token, metadata) => {
       try {
-        setBusy(true);
+        setBusyState(true);
         await api.exchange(public_token, metadata.institution);
         await api.sync();
         onConnected?.();
       } catch (e) {
         setError(e.message);
       } finally {
-        setBusy(false);
+        setBusyState(false);
       }
     },
   });

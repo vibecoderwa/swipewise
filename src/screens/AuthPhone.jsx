@@ -84,7 +84,7 @@ export default function AuthPhone({ onBack, onSent }) {
 
       <div className="auth-cta">
         <button className="btn" disabled={!ready || busy} onClick={send}>
-          {busy ? 'Sending…' : 'Send me a code'}
+          {busy ? 'Sending…' : ready ? 'Send me a code' : 'Enter your number'}
         </button>
         <div className="auth-fineprint">
           By continuing, you agree to the Terms &amp; Privacy.<br/>

@@ -35,6 +35,7 @@ export default function Onboarding({ onDone }) {
 }
 
 function Choose({ onPickManual, onDone }) {
+  const [connecting, setConnecting] = useState(false);
   return (
     <>
       <div className="auth-top">
@@ -54,15 +55,27 @@ function Choose({ onPickManual, onDone }) {
         </p>
       </div>
 
-      <div className="plaid-cta">
-        <div className="plaid-cta-head">
-          <span className="plaid-mark">P</span>
-          <span>Plaid — the secure way</span>
-        </div>
-        <div className="plaid-cta-body">
-          Works with 12,000+ US banks. Takes ~20 seconds. We auto-detect your credit cards.
-        </div>
-        <PlaidConnect onConnected={onDone} />
+      <div className={`plaid-cta ${connecting ? 'connecting' : ''}`}>
+        {connecting ? (
+          <div className="connecting-row">
+            <div className="plaid-spinner" />
+            <div className="connecting-text">
+              <div className="h">Linking your bank…</div>
+              <div className="s">Reading cards · categorizing transactions · setting up geofences</div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="plaid-cta-head">
+              <span className="plaid-mark">P</span>
+              <span>Plaid — the secure way</span>
+            </div>
+            <div className="plaid-cta-body">
+              Works with 12,000+ US banks. Takes ~20 seconds. We auto-detect your credit cards.
+            </div>
+          </>
+        )}
+        <PlaidConnect onConnected={onDone} onBusyChange={setConnecting} />
       </div>
 
       <div className="trust-row">
@@ -164,7 +177,7 @@ function ManualPick({ onBack, onDone }) {
               className={`manual-card ${isSel ? 'selected' : ''}`}
               onClick={() => toggle(c.id)}
             >
-              <span className={`chip ${brandKey(c)}`}>{c.issuer === 'American Express' ? 'AMEX' : c.issuer.slice(0, 4).toUpperCase()}</span>
+              <span className={`brand-swatch ${brandKey(c)}`} aria-hidden="true" />
               <div className="manual-card-text">
                 <div className="manual-card-name">{c.name}</div>
                 <div className="manual-card-fee">{c.annual_fee ? `$${c.annual_fee}/yr` : 'No fee'}</div>

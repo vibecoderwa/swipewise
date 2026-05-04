@@ -139,13 +139,20 @@ export default function AuthOTP({ phone, demoCode, onBack, onVerified }) {
         )}
       </div>
 
-      {currentDemo && (
+      {currentDemo && !busy && (
         <div className="demo-sms-bubble">
           <div className="head">SWIPEWISE</div>
           <div className="body">
             Your code is <b>{currentDemo}</b>. Don't share it with anyone.{' '}
             <i style={{ color: 'var(--graphite)', fontFamily: 'var(--font-display)' }}>Not even your dog.</i>
           </div>
+        </div>
+      )}
+
+      {busy && (
+        <div className="verify-card">
+          <div className="ring" />
+          <div className="text">Verifying & loading wallet…</div>
         </div>
       )}
 
