@@ -574,17 +574,95 @@ app.get('/api/prefs', (req, res) => {
     auto_share: !!p.auto_share,
     suggest_tags: !!p.suggest_tags,
     show_badges: !!p.show_badges,
+    persona: p.persona,
+    streak_freezes: p.streak_freezes,
+    nag_under_amount: p.nag_under_amount,
+    crowd_optin: !!p.crowd_optin,
   });
 });
 app.post('/api/prefs', (req, res) => {
   const userId = getUserId(req);
   const allowed = ['default_visibility', 'reduce_patterns', 'notif_arrival',
                    'notif_expiring', 'notif_weekly', 'cpp',
-                   'auto_share', 'suggest_tags', 'show_badges'];
+                   'auto_share', 'suggest_tags', 'show_badges',
+                   'persona', 'streak_freezes', 'nag_under_amount', 'crowd_optin'];
   const patch = {};
   for (const k of allowed) if (k in (req.body || {})) patch[k] = req.body[k];
   const p = setPrefs(userId, patch);
   res.json({ ok: true, prefs: p });
+});
+
+// ─── Swipe history feed (Plaid + manual swipe events combined) ───
+// Returns chronological feed of swipes: from `swipe_events` (manual confirmed
+// + recommended path) and `transactions` (Plaid-detected). Each carries an
+// `optimal` flag computed against `bestCardFor(category, userCards)`.
+app.get('/api/log', (req, res) => {
+  const userId = getUserId(req);
+  const cards = userCards(userId);
+
+  const events = db.prepare(`
+    SELECT * FROM swipe_events WHERE user_id = ? ORDER BY created_at DESC LIMIT 100
+  `).all(userId).map(e => {
+    const card = CARDS.find(c => c.id === e.card_id);
+    const best = cards.length ? bestCardFor(e.category, cards) : null;
+    const optimal = best && card ? best.card.id === card.id : true;
+    const earned = (e.rate / 100) * (e.basket || 0);
+    const couldHave = best ? (best.rate / 100) * (e.basket || 0) : earned;
+    return {
+      id: e.id, source: 'manual',
+      ts: e.created_at,
+      merchant: e.merchant, location: e.location,
+      category: e.category,
+      card_id: e.card_id, card_name: card?.name || e.card_id,
+      rate: e.rate, basket: e.basket,
+      earned: +earned.toFixed(2),
+      could_have: +couldHave.toFixed(2),
+      missed: +Math.max(0, couldHave - earned).toFixed(2),
+      optimal,
+      best_card_id: best?.card.id,
+      best_rate: best?.rate,
+    };
+  });
+
+  const txs = db.prepare(`
+    SELECT t.*, a.matched_card_id
+    FROM transactions t JOIN accounts a ON t.account_id = a.id
+    WHERE t.user_id = ? AND t.amount > 0
+    ORDER BY t.date DESC LIMIT 100
+  `).all(userId).map(t => {
+    const cat = categoryFromPlaid(t.pfc_detailed, t.pfc_primary);
+    const card = t.matched_card_id ? CARDS.find(c => c.id === t.matched_card_id) : null;
+    const usedRate = card ? rewardRate(card, cat) : 1;
+    const best = cards.length ? bestCardFor(cat, cards) : null;
+    const earned = (usedRate / 100) * t.amount;
+    const couldHave = best ? (best.rate / 100) * t.amount : earned;
+    return {
+      id: t.id, source: 'plaid',
+      ts: new Date(t.date).getTime(),
+      merchant: t.merchant_name || t.name,
+      category: cat,
+      card_id: card?.id, card_name: card?.name || 'Unknown',
+      rate: usedRate, basket: t.amount,
+      earned: +earned.toFixed(2),
+      could_have: +couldHave.toFixed(2),
+      missed: +Math.max(0, couldHave - earned).toFixed(2),
+      optimal: best && card ? best.card.id === card.id : true,
+      best_card_id: best?.card.id,
+      best_rate: best?.rate,
+    };
+  });
+
+  const all = [...events, ...txs].sort((a, b) => b.ts - a.ts);
+  res.json({
+    items: all,
+    counts: {
+      total: all.length,
+      optimal: all.filter(x => x.optimal).length,
+      suboptimal: all.filter(x => !x.optimal).length,
+      manual: all.filter(x => x.source === 'manual').length,
+    },
+    total_missed: +all.reduce((s, x) => s + x.missed, 0).toFixed(2),
+  });
 });
 
 const distDir = join(__dirname, '..', 'dist');

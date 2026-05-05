@@ -76,4 +76,5 @@ export const api = {
   prefs: () => request('/api/prefs'),
   setPrefs: (patch) =>
     request('/api/prefs', { method: 'POST', body: JSON.stringify(patch) }),
+  log: () => request('/api/log'),
 };

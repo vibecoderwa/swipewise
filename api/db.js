@@ -140,6 +140,10 @@ db.exec(`
     auto_share INTEGER NOT NULL DEFAULT 0,
     suggest_tags INTEGER NOT NULL DEFAULT 1,
     show_badges INTEGER NOT NULL DEFAULT 1,
+    persona TEXT NOT NULL DEFAULT 'roadwarrior',
+    streak_freezes INTEGER NOT NULL DEFAULT 2,
+    nag_under_amount REAL NOT NULL DEFAULT 20,
+    crowd_optin INTEGER NOT NULL DEFAULT 0,
     seeded INTEGER NOT NULL DEFAULT 0,
     updated_at INTEGER NOT NULL DEFAULT 0
   );
@@ -150,10 +154,14 @@ try {
   const cols = db.prepare("PRAGMA table_info(user_prefs)").all();
   const colNames = new Set(cols.map(c => c.name));
   if (cols.length) {
-    if (!colNames.has('seeded'))       db.exec('ALTER TABLE user_prefs ADD COLUMN seeded INTEGER NOT NULL DEFAULT 0');
-    if (!colNames.has('auto_share'))   db.exec('ALTER TABLE user_prefs ADD COLUMN auto_share INTEGER NOT NULL DEFAULT 0');
-    if (!colNames.has('suggest_tags')) db.exec('ALTER TABLE user_prefs ADD COLUMN suggest_tags INTEGER NOT NULL DEFAULT 1');
-    if (!colNames.has('show_badges'))  db.exec('ALTER TABLE user_prefs ADD COLUMN show_badges INTEGER NOT NULL DEFAULT 1');
+    if (!colNames.has('seeded'))         db.exec('ALTER TABLE user_prefs ADD COLUMN seeded INTEGER NOT NULL DEFAULT 0');
+    if (!colNames.has('auto_share'))     db.exec('ALTER TABLE user_prefs ADD COLUMN auto_share INTEGER NOT NULL DEFAULT 0');
+    if (!colNames.has('suggest_tags'))   db.exec('ALTER TABLE user_prefs ADD COLUMN suggest_tags INTEGER NOT NULL DEFAULT 1');
+    if (!colNames.has('show_badges'))    db.exec('ALTER TABLE user_prefs ADD COLUMN show_badges INTEGER NOT NULL DEFAULT 1');
+    if (!colNames.has('persona'))        db.exec("ALTER TABLE user_prefs ADD COLUMN persona TEXT NOT NULL DEFAULT 'roadwarrior'");
+    if (!colNames.has('streak_freezes')) db.exec('ALTER TABLE user_prefs ADD COLUMN streak_freezes INTEGER NOT NULL DEFAULT 2');
+    if (!colNames.has('nag_under_amount')) db.exec('ALTER TABLE user_prefs ADD COLUMN nag_under_amount REAL NOT NULL DEFAULT 20');
+    if (!colNames.has('crowd_optin'))    db.exec('ALTER TABLE user_prefs ADD COLUMN crowd_optin INTEGER NOT NULL DEFAULT 0');
   }
 } catch (_) { /* ignore */ }
 
@@ -208,6 +216,7 @@ export function setPrefs(userId, patch) {
       default_visibility = ?, reduce_patterns = ?, notif_arrival = ?,
       notif_expiring = ?, notif_weekly = ?, cpp = ?,
       auto_share = ?, suggest_tags = ?, show_badges = ?,
+      persona = ?, streak_freezes = ?, nag_under_amount = ?, crowd_optin = ?,
       seeded = ?, updated_at = ?
     WHERE user_id = ?
   `).run(
@@ -215,6 +224,7 @@ export function setPrefs(userId, patch) {
     merged.notif_arrival ? 1 : 0, merged.notif_expiring ? 1 : 0,
     merged.notif_weekly ? 1 : 0, merged.cpp,
     merged.auto_share ? 1 : 0, merged.suggest_tags ? 1 : 0, merged.show_badges ? 1 : 0,
+    merged.persona, merged.streak_freezes, merged.nag_under_amount, merged.crowd_optin ? 1 : 0,
     merged.seeded ? 1 : 0, merged.updated_at, userId
   );
   return getPrefs(userId);
