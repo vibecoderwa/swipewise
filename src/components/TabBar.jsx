@@ -2,8 +2,9 @@ import Icon from './Icon.jsx';
 
 const TABS = [
   { id: 'home',     label: 'Home',     icon: 'home' },
-  { id: 'cards',    label: 'Cards',    icon: 'grid' },
+  { id: 'log',      label: 'Log',      icon: 'check' },
   { id: 'insights', label: 'Insights', icon: 'trend' },
+  { id: 'credits',  label: 'Credits',  icon: 'gift' },
   { id: 'settings', label: 'Settings', icon: 'settings' },
 ];
 

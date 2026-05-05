@@ -4,13 +4,17 @@ import TabBar from './components/TabBar.jsx';
 import BackButton from './components/BackButton.jsx';
 import MotionScreen from './components/MotionScreen.jsx';
 import HomeScreen from './screens/Home.jsx';
-import CardsScreen from './screens/Cards.jsx';
+import LogScreen from './screens/Log.jsx';
 import InsightsScreen from './screens/Insights.jsx';
+import CreditsScreen from './screens/Credits.jsx';
 import SettingsScreen from './screens/Settings.jsx';
+import CardsScreen from './screens/Cards.jsx';
 import FriendsScreen from './screens/Friends.jsx';
 import ComposeScreen from './screens/Compose.jsx';
 import WinMoment from './screens/WinMoment.jsx';
 import MomentsScreen from './screens/Moments.jsx';
+import LeftOnTable from './screens/LeftOnTable.jsx';
+import StreakDetail from './screens/StreakDetail.jsx';
 import Landing from './screens/Landing.jsx';
 import AuthPhone from './screens/AuthPhone.jsx';
 import AuthOTP from './screens/AuthOTP.jsx';
@@ -20,7 +24,7 @@ const TAB_KEY = 'swipewise_tab';
 const STAGE_KEY = 'swipewise_stage';
 const ONBOARDED_KEY = 'swipewise_onboarded';
 
-const TAB_IDS = new Set(['home', 'cards', 'insights', 'settings']);
+const TAB_IDS = new Set(['home', 'log', 'insights', 'credits', 'settings']);
 
 function initialStage() {
   const saved = localStorage.getItem(STAGE_KEY);
@@ -219,10 +223,9 @@ export default function App() {
           go={go}
         />
       )}
-      {screen === 'cards' && (
-        <CardsScreen
+      {screen === 'log' && (
+        <LogScreen
           insights={insights}
-          credits={credits}
           go={go}
           onChange={refresh}
         />
@@ -236,6 +239,23 @@ export default function App() {
           streak={streak}
           go={go}
         />
+      )}
+      {screen === 'credits' && (
+        <CreditsScreen insights={insights} />
+      )}
+      {screen === 'cards' && (
+        <CardsScreen
+          insights={insights}
+          credits={credits}
+          go={go}
+          onChange={refresh}
+        />
+      )}
+      {screen === 'lefttable' && (
+        <LeftOnTable go={go} />
+      )}
+      {screen === 'streak' && (
+        <StreakDetail streak={streak} go={go} />
       )}
       {screen === 'settings' && (
         <SettingsScreen

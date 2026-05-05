@@ -19,6 +19,8 @@ const PATHS = {
   other: <><circle cx="7" cy="12" r="1.2" fill="currentColor" /><circle cx="12" cy="12" r="1.2" fill="currentColor" /><circle cx="17" cy="12" r="1.2" fill="currentColor" /></>,
   card: <><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 11h18M7 15h4" /></>,
   link: <><path d="M10 14l-3 3a3 3 0 0 1-4-4l3-3M14 10l3-3a3 3 0 0 1 4 4l-3 3M9 15l6-6" /></>,
+  check: <><path d="M4 12l5 5L20 6" /></>,
+  flame: <><path d="M12 2C12 2 8 6 8 11a4 4 0 0 0 8 0c0-1.5-1-2.5-1-4 1.5 1 3 3 3 6a6 6 0 1 1-12 0c0-5 4-8 6-11z" /></>,
 };
 
 export default function Icon({ name, size = 18, color = 'currentColor' }) {

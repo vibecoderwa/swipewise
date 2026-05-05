@@ -160,10 +160,12 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected, 
         <span>Swipewise</span>
       </div>
 
-      {/* Streak + YTD strip — two chips a returning user wants to see first */}
+      {/* Streak + YTD strip — left chip drills into Streak detail (calendar
+          + freezes + milestones), right chip drills into Insights (the YTD
+          breakdown screen). */}
       {streak && (
         <div className="home-stats">
-          <button className="home-stat streak" onClick={() => go?.('insights')}>
+          <button className="home-stat streak" onClick={() => go?.('streak')}>
             <span className="flame">🔥</span>
             <div>
               <div className="num">{streak.streak} <small>wk</small></div>
@@ -177,6 +179,18 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected, 
             </div>
           </button>
         </div>
+      )}
+
+      {/* Left-on-the-table alert — drills into the LeftOnTable detail */}
+      {insights?.total_missed_rewards > 0 && (
+        <button className="lot-alert" onClick={() => go?.('lefttable')}>
+          <span className="ic">🪙</span>
+          <span className="copy">
+            <b>${Math.round(insights.total_missed_rewards)} left on the table</b>
+            <span className="sub"> — swipes on the wrong card.</span>
+          </span>
+          <span className="show">Show ›</span>
+        </button>
       )}
 
       <div className="geo-eyebrow" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -246,9 +260,13 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected, 
                   className={`merchant-row ${isAccent ? 'accent' : ''} ${brandKey(card)}`}
                   onClick={() => setOpenMerchant(m)}
                 >
+                  {isAccent && <span className="best-badge">BEST</span>}
                   <div className="merchant-icon">{m.icon}</div>
                   <div className="merchant-text">
-                    <div className="merchant-name">{m.name}</div>
+                    <div className="merchant-name">
+                      {m.name}
+                      <ConfidenceDots level={m.level} />
+                    </div>
                     <div className="merchant-sub">{m.sub}{dLabel ? ` · ${dLabel}` : ''}</div>
                   </div>
                   <div className="merchant-right">
@@ -258,7 +276,6 @@ export default function HomeScreen({ hasAccounts, insights, error, onConnected, 
                     </div>
                     <div className="merchant-uplift">
                       {m.uplift > 0 ? `+$${m.uplift.toFixed(m.uplift < 1 ? 2 : (m.uplift < 10 ? 2 : 0))}` : ''}
-                      <ConfidenceDots level={m.level} />
                     </div>
                   </div>
                 </button>
