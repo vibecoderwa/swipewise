@@ -54,9 +54,13 @@ app.post('/api/auth/otp/send', (req, res) => {
     user = { id: newId };
   }
 
-  const code = process.env.NODE_ENV === 'production'
-    ? String(Math.floor(100000 + Math.random() * 900000))
-    : '421906';
+  const code = process.env.OTP_FIXED || (
+    process.env.NODE_ENV === 'production'
+      ? String(Math.floor(100000 + Math.random() * 900000))
+      : '421906'
+  );
+  // Always log so it's visible in Railway's deployment logs when SMS isn't configured
+  console.log(`[otp] code for ${normalized}: ${code}`);
   const expiresAt = Date.now() + 10 * 60 * 1000;
 
   db.prepare(`INSERT INTO auth_otps (phone, user_id, code, expires_at, attempts)
