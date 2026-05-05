@@ -1,0 +1,269 @@
+[
+  {
+    "id": "chase_sapphire_preferred",
+    "name": "Chase Sapphire Preferred",
+    "issuer": "Chase",
+    "network": "Visa",
+    "annual_fee": 95,
+    "match_keywords": ["sapphire preferred", "sapphire pref"],
+    "rewards": {
+      "dining": 3, "streaming": 3, "groceries": 3, "travel": 2,
+      "online_shopping": 1, "gas": 1, "other": 1
+    }
+  },
+  {
+    "id": "chase_sapphire_reserve",
+    "name": "Chase Sapphire Reserve",
+    "issuer": "Chase",
+    "network": "Visa",
+    "annual_fee": 550,
+    "match_keywords": ["sapphire reserve", "csr"],
+    "rewards": {
+      "dining": 3, "travel": 3, "streaming": 1, "groceries": 1,
+      "online_shopping": 1, "gas": 1, "other": 1
+    },
+    "credits": [
+      { "id": "csr_travel", "name": "Annual Travel Credit", "value": 300, "cadence": "annual", "description": "Auto-applied to broad travel — rideshares, transit, hotels, flights worldwide. Durable benefit.", "defaultCaptured": true },
+      { "id": "csr_doordash", "name": "DashPass + DoorDash credit", "value": 60, "cadence": "annual", "description": "$5/month grocery + $10/month restaurant via DoorDash.", "defaultCaptured": false }
+    ]
+  },
+  {
+    "id": "chase_freedom_unlimited",
+    "name": "Chase Freedom Unlimited",
+    "issuer": "Chase",
+    "network": "Visa",
+    "annual_fee": 0,
+    "match_keywords": ["freedom unlimited", "cfu"],
+    "rewards": {
+      "dining": 3, "travel": 5, "streaming": 1.5, "groceries": 1.5,
+      "online_shopping": 1.5, "gas": 1.5, "other": 1.5
+    }
+  },
+  {
+    "id": "chase_freedom_flex",
+    "name": "Chase Freedom Flex",
+    "issuer": "Chase",
+    "network": "Mastercard",
+    "annual_fee": 0,
+    "match_keywords": ["freedom flex", "freedom"],
+    "rewards": {
+      "dining": 3, "travel": 5, "streaming": 1, "groceries": 1,
+      "online_shopping": 5, "gas": 5, "other": 1
+    }
+  },
+  {
+    "id": "amex_gold",
+    "name": "Amex Gold",
+    "issuer": "American Express",
+    "network": "Amex",
+    "annual_fee": 325,
+    "match_keywords": ["gold card", "amex gold"],
+    "rewards": {
+      "dining": 4, "groceries": 4, "travel": 3, "streaming": 1,
+      "online_shopping": 1, "gas": 1, "other": 1
+    },
+    "credits": [
+      { "id": "gold_dining", "name": "Dining credit", "value": 120, "cadence": "annual", "description": "$10/month at Grubhub, Goldbelly, Wine.com, Five Guys, and select Shake Shacks.", "defaultCaptured": false },
+      { "id": "gold_uber", "name": "Uber Cash", "value": 120, "cadence": "annual", "description": "$10/month for Uber rides or Uber Eats orders.", "defaultCaptured": false },
+      { "id": "gold_resy", "name": "Resy credit", "value": 100, "cadence": "annual", "description": "$50 twice yearly for Resy dining bookings.", "defaultCaptured": false },
+      { "id": "gold_dunkin", "name": "Dunkin' credit", "value": 84, "cadence": "annual", "description": "$7/month at Dunkin' locations.", "defaultCaptured": false }
+    ]
+  },
+  {
+    "id": "amex_platinum",
+    "name": "Amex Platinum",
+    "issuer": "American Express",
+    "network": "Amex",
+    "annual_fee": 695,
+    "match_keywords": ["platinum card", "amex platinum"],
+    "rewards": {
+      "travel": 5, "dining": 1, "groceries": 1, "streaming": 1,
+      "online_shopping": 1, "gas": 1, "other": 1
+    },
+    "credits": [
+      { "id": "plat_airline", "name": "Airline incidental credit", "value": 200, "cadence": "annual", "description": "Reimburses select fees on one airline (bags, seat upgrades, in-flight purchases).", "defaultCaptured": false },
+      { "id": "plat_hotel", "name": "Fine Hotels & Resorts credit", "value": 200, "cadence": "annual", "description": "$200 toward prepaid FHR or The Hotel Collection bookings of 2+ nights.", "defaultCaptured": false },
+      { "id": "plat_uber", "name": "Uber Cash", "value": 200, "cadence": "annual", "description": "$15/month + $20 December for Uber rides or Uber Eats.", "defaultCaptured": false },
+      { "id": "plat_digital", "name": "Digital entertainment credit", "value": 240, "cadence": "annual", "description": "$20/month at Disney+, Hulu, Peacock, NYT, WSJ, ESPN+.", "defaultCaptured": false },
+      { "id": "plat_clear", "name": "CLEAR Plus credit", "value": 199, "cadence": "annual", "description": "Covers full annual CLEAR Plus membership.", "defaultCaptured": false },
+      { "id": "plat_walmart", "name": "Walmart+ membership", "value": 155, "cadence": "annual", "description": "Free Walmart+ monthly membership.", "defaultCaptured": false },
+      { "id": "plat_saks", "name": "Saks Fifth Avenue credit", "value": 100, "cadence": "annual", "description": "$50 each half-year at Saks.", "defaultCaptured": false }
+    ]
+  },
+  {
+    "id": "amex_bcp",
+    "name": "Amex Blue Cash Preferred",
+    "issuer": "American Express",
+    "network": "Amex",
+    "annual_fee": 95,
+    "match_keywords": ["blue cash preferred", "bcp"],
+    "rewards": {
+      "groceries": 6, "streaming": 6, "gas": 3, "travel": 3,
+      "dining": 1, "online_shopping": 1, "other": 1
+    }
+  },
+  {
+    "id": "amex_bce",
+    "name": "Amex Blue Cash Everyday",
+    "issuer": "American Express",
+    "network": "Amex",
+    "annual_fee": 0,
+    "match_keywords": ["blue cash everyday", "bce"],
+    "rewards": {
+      "groceries": 3, "online_shopping": 3, "gas": 3,
+      "dining": 1, "streaming": 1, "travel": 1, "other": 1
+    }
+  },
+  {
+    "id": "citi_double_cash",
+    "name": "Citi Double Cash",
+    "issuer": "Citi",
+    "network": "Mastercard",
+    "annual_fee": 0,
+    "match_keywords": ["double cash"],
+    "rewards": {
+      "groceries": 2, "dining": 2, "gas": 2, "travel": 2,
+      "online_shopping": 2, "streaming": 2, "other": 2
+    }
+  },
+  {
+    "id": "citi_custom_cash",
+    "name": "Citi Custom Cash",
+    "issuer": "Citi",
+    "network": "Mastercard",
+    "annual_fee": 0,
+    "match_keywords": ["custom cash"],
+    "rewards": {
+      "groceries": 5, "dining": 5, "gas": 5, "travel": 5,
+      "online_shopping": 5, "streaming": 5, "other": 1
+    }
+  },
+  {
+    "id": "capone_venture_x",
+    "name": "Capital One Venture X",
+    "issuer": "Capital One",
+    "network": "Visa",
+    "annual_fee": 395,
+    "match_keywords": ["venture x"],
+    "rewards": {
+      "travel": 5, "dining": 2, "groceries": 2, "gas": 2,
+      "online_shopping": 2, "streaming": 2, "other": 2
+    },
+    "credits": [
+      { "id": "vx_travel", "name": "Annual Travel Credit", "value": 300, "cadence": "annual", "description": "Statement credit for bookings made through Capital One Travel.", "defaultCaptured": true },
+      { "id": "vx_anniversary", "name": "Anniversary bonus", "value": 100, "cadence": "annual", "description": "10,000 miles every year on cardmember anniversary (~$100 value).", "defaultCaptured": true }
+    ]
+  },
+  {
+    "id": "capone_venture",
+    "name": "Capital One Venture",
+    "issuer": "Capital One",
+    "network": "Visa",
+    "annual_fee": 95,
+    "match_keywords": ["venture"],
+    "rewards": {
+      "travel": 5, "dining": 2, "groceries": 2, "gas": 2,
+      "online_shopping": 2, "streaming": 2, "other": 2
+    }
+  },
+  {
+    "id": "capone_savor",
+    "name": "Capital One Savor",
+    "issuer": "Capital One",
+    "network": "Mastercard",
+    "annual_fee": 95,
+    "match_keywords": ["savor "],
+    "rewards": {
+      "dining": 4, "streaming": 4, "groceries": 3, "travel": 1,
+      "online_shopping": 1, "gas": 1, "other": 1
+    }
+  },
+  {
+    "id": "capone_savorone",
+    "name": "Capital One SavorOne",
+    "issuer": "Capital One",
+    "network": "Mastercard",
+    "annual_fee": 0,
+    "match_keywords": ["savorone"],
+    "rewards": {
+      "dining": 3, "streaming": 3, "groceries": 3, "travel": 1,
+      "online_shopping": 1, "gas": 1, "other": 1
+    }
+  },
+  {
+    "id": "capone_quicksilver",
+    "name": "Capital One Quicksilver",
+    "issuer": "Capital One",
+    "network": "Visa",
+    "annual_fee": 0,
+    "match_keywords": ["quicksilver"],
+    "rewards": {
+      "groceries": 1.5, "dining": 1.5, "gas": 1.5, "travel": 1.5,
+      "online_shopping": 1.5, "streaming": 1.5, "other": 1.5
+    }
+  },
+  {
+    "id": "discover_it",
+    "name": "Discover it Cash Back",
+    "issuer": "Discover",
+    "network": "Discover",
+    "annual_fee": 0,
+    "match_keywords": ["discover it", "discover card"],
+    "rewards": {
+      "groceries": 5, "dining": 5, "gas": 5, "online_shopping": 5,
+      "streaming": 1, "travel": 1, "other": 1
+    }
+  },
+  {
+    "id": "wf_active_cash",
+    "name": "Wells Fargo Active Cash",
+    "issuer": "Wells Fargo",
+    "network": "Visa",
+    "annual_fee": 0,
+    "match_keywords": ["active cash"],
+    "rewards": {
+      "groceries": 2, "dining": 2, "gas": 2, "travel": 2,
+      "online_shopping": 2, "streaming": 2, "other": 2
+    }
+  },
+  {
+    "id": "apple_card",
+    "name": "Apple Card",
+    "issuer": "Goldman Sachs",
+    "network": "Mastercard",
+    "annual_fee": 0,
+    "match_keywords": ["apple card"],
+    "rewards": {
+      "groceries": 1, "dining": 1, "gas": 1, "travel": 1,
+      "online_shopping": 2, "streaming": 1, "other": 1
+    }
+  },
+  {
+    "id": "us_bank_cash_plus",
+    "name": "U.S. Bank Cash+",
+    "issuer": "U.S. Bank",
+    "network": "Visa",
+    "annual_fee": 0,
+    "match_keywords": ["cash+", "cash plus"],
+    "rewards": {
+      "groceries": 2, "dining": 2, "gas": 2, "streaming": 5,
+      "online_shopping": 5, "travel": 1, "other": 1
+    }
+  },
+  {
+    "id": "amex_marriott_bonvoy",
+    "name": "Marriott Bonvoy Brilliant",
+    "issuer": "American Express",
+    "network": "Amex",
+    "annual_fee": 650,
+    "match_keywords": ["bonvoy", "marriott"],
+    "rewards": {
+      "travel": 6, "dining": 3, "groceries": 1, "gas": 1,
+      "online_shopping": 1, "streaming": 1, "other": 2
+    },
+    "credits": [
+      { "id": "marriott_dining", "name": "Dining credit", "value": 300, "cadence": "annual", "description": "$25/month at restaurants worldwide.", "defaultCaptured": false },
+      { "id": "marriott_freenight", "name": "Free Night Award", "value": 650, "cadence": "annual", "description": "One free night up to 85,000 points (~$500-700) on cardmember anniversary.", "defaultCaptured": true }
+    ]
+  }
+]

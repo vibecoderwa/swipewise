@@ -1,25 +1,36 @@
-# CODING AGENTS: READ THIS FIRST
+# Swipewise
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+Tells you the best credit card to use, every time you swipe.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+## Quick start (Replit)
 
-## What you should do — IMPORTANT
+1. **Import this repo** into Replit: New Repl → "Import from GitHub" → paste `https://github.com/vibecoderwa/swipewise`.
+2. **Add Plaid credentials** as Replit Secrets (Tools → Secrets):
+   - `PLAID_CLIENT_ID` — from your Plaid dashboard
+   - `PLAID_SECRET` — your **sandbox** secret (start here)
+   - `PLAID_ENV` — `sandbox`
+3. Click **Run**. Replit will install dependencies and start both the API (port 3001) and the web app (port 5173).
+4. Open the web preview. Click **Connect a bank**, pick "First Platypus Bank", use Plaid sandbox credentials:
+   - username: `user_good`
+   - password: `pass_good`
+5. After connecting, match each account to a real card so we know what rewards rules to apply.
 
-**Read the chat transcripts first.** There are 2 chat transcript(s) in `chats/`. The transcripts show the full back-and-forth between the user and the design assistant — they tell you **what the user actually wants** and **where they landed** after iterating. Don't skip them. The final HTML files are the output, but the chat is where the intent lives.
+## Architecture
 
-**Read `project/REQUIREMENTS.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+- **Express API** (`api/`) — Plaid integration, SQLite storage, insights computation.
+- **React frontend** (`src/`) — Vite-served in dev, built into `dist/` for prod, served by Express.
+- **Card catalog** (`data/cards.json`) — manually curated reward rules for ~20 popular US cards.
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+## Endpoints
 
-## About the design files
+- `POST /api/plaid/link_token` — create a Link token for the user
+- `POST /api/plaid/exchange` — exchange public_token for access_token, persist accounts
+- `POST /api/sync` — pull last 30d transactions from Plaid
+- `GET  /api/accounts` — connected accounts (with matched card)
+- `POST /api/accounts/:id/match` — manually match an account to a card
+- `GET  /api/cards` — card catalog
+- `GET  /api/insights` — best card per category + missed-rewards analysis
 
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+## Going to production
 
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
-
-## Bundle contents
-
-- `README.md` — this file
-- `chats/` — conversation transcripts (read these!)
-- `project/` — the `Personal "Agentic" Credit Card Optimizer` project files (HTML prototypes, assets, components)
+When you're ready to use real bank data, request production access in the Plaid dashboard, then set `PLAID_ENV=production` and use your production secret.
