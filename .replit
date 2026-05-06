@@ -11,12 +11,23 @@ deploymentTarget = "cloudrun"
 build = ["sh", "-c", "npm install && npm run build"]
 
 [[ports]]
+localPort = 3001
+externalPort = 3001
+
+[[ports]]
 localPort = 5173
 externalPort = 80
 
 [[ports]]
-localPort = 3001
-externalPort = 3001
+localPort = 8081
+externalPort = 8081
+
+[[ports]]
+localPort = 8082
+externalPort = 3000
 
 [env]
 NODE_ENV = "development"
+
+[agent]
+expertMode = true
