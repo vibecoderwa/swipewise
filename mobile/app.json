@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Swipewise",
+    "slug": "swipewise",
+    "scheme": "swipewise",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F7F2E9"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.swipewise.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Swipewise uses your location to show which card to swipe at the merchants near you.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.swipewise.app",
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Swipewise uses your location to show which card to swipe at the merchants near you."
+        }
+      ]
+    ],
+    "extra": {
+      "apiBaseUrl": "http://localhost:8080"
+    }
+  }
+}

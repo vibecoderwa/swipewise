@@ -1,0 +1,77 @@
+// Thin client for the Swipewise backend (Express + Postgres).
+// Base URL comes from app.json `extra.apiBaseUrl`; override per-env later.
+
+import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const BASE_URL: string =
+  (Constants.expoConfig?.extra as { apiBaseUrl?: string } | undefined)?.apiBaseUrl ??
+  'http://localhost:8080';
+
+const TOKEN_KEY = 'swipewise.accessToken';
+const REFRESH_KEY = 'swipewise.refreshToken';
+const USER_KEY = 'swipewise.userId';
+
+export type Tokens = { token: string; refreshToken: string; userId: string };
+
+async function request<T>(
+  path: string,
+  init: RequestInit & { auth?: boolean } = {},
+): Promise<T> {
+  const headers = new Headers(init.headers);
+  headers.set('Content-Type', 'application/json');
+  if (init.auth) {
+    const tok = await AsyncStorage.getItem(TOKEN_KEY);
+    if (tok) headers.set('Authorization', `Bearer ${tok}`);
+  }
+
+  const res = await fetch(`${BASE_URL}${path}`, { ...init, headers });
+  const text = await res.text();
+  const body = text ? JSON.parse(text) : {};
+  if (!res.ok) {
+    const msg = (body as { error?: string }).error ?? `Request failed (${res.status})`;
+    throw new Error(msg);
+  }
+  return body as T;
+}
+
+export const api = {
+  baseUrl: BASE_URL,
+
+  sendOtp: (phone: string) =>
+    request<{ sent: true }>('/auth/otp/send', {
+      method: 'POST',
+      body: JSON.stringify({ phone }),
+    }),
+
+  verifyOtp: async (phone: string, code: string) => {
+    const tokens = await request<Tokens>('/auth/otp/verify', {
+      method: 'POST',
+      body: JSON.stringify({ phone, code }),
+    });
+    await AsyncStorage.multiSet([
+      [TOKEN_KEY, tokens.token],
+      [REFRESH_KEY, tokens.refreshToken],
+      [USER_KEY, tokens.userId],
+    ]);
+    return tokens;
+  },
+
+  signOut: async () => {
+    await AsyncStorage.multiRemove([TOKEN_KEY, REFRESH_KEY, USER_KEY]);
+  },
+
+  merchantsNear: (lat: number, lng: number, radius = 1500) =>
+    request<{
+      merchants: Array<{
+        id: string;
+        name: string;
+        category: string;
+        lat: number;
+        lng: number;
+        distanceM: number;
+        bestCard?: { issuer: string; name: string; multiplier: number };
+        expectedReward?: number;
+      }>;
+    }>(`/merchants/near?lat=${lat}&lng=${lng}&radius=${radius}`, { auth: true }),
+};
