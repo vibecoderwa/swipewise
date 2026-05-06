@@ -1,0 +1,50 @@
+Stand up the Swipewise backend on this Replit so the mobile app's
+real OTP flow works end-to-end. Don't ask me clarifying questions
+unless absolutely necessary — defaults are fine.
+
+CONTEXT
+- We're on branch: claude/implement-design-system-3w2t6
+- Backend lives in backend/ (Express + TypeScript + Postgres + Plaid + JWT + Twilio)
+- Mobile app lives in mobile/ (Expo + expo-router)
+- Schema is at backend/src/db/schema.sql
+- The api/ folder is a deprecated scratchpad — ignore it
+
+DO
+1. Provision Replit's managed Postgres so DATABASE_URL is set automatically.
+2. Set the following Secrets:
+   - TWILIO_ACCOUNT_SID = AC128a845111c0771581afb9260b2850db
+   - TWILIO_PHONE_NUMBER = +16513646698
+   - JWT_SECRET, JWT_REFRESH_SECRET = generate as random 64-char hex strings yourself.
+   - AES_KEY = generate as a random 64-char hex string yourself (used for Plaid token encryption).
+   - NODE_ENV = development
+3. Stop after creating the Secrets above and ask me to paste TWILIO_AUTH_TOKEN myself
+   into the Secrets UI (I will rotate the token and paste it directly — do not ask me
+   to share it in chat).
+4. After I confirm the auth token is set:
+   - cd backend && npm install
+   - Run psql $DATABASE_URL -f src/db/schema.sql to create tables.
+   - Start the backend with npm run dev (it listens on $PORT).
+   - Open the port to the public web so it gets a Replit public URL.
+5. Update mobile/app.json: set extra.apiBaseUrl to the backend's public Replit URL
+   (e.g. https://swipewise-<user>.replit.dev). Do not change anything else in
+   mobile/app.json — keep all permission strings, plugins, and assets as-is.
+6. Add the Replit public URL to ALLOWED_ORIGINS in Secrets if needed for CORS.
+7. Commit the mobile/app.json change with a clear message and push to the
+   claude/implement-design-system-3w2t6 branch.
+8. Verify by curl-ing https://<public-url>/health (or whatever health endpoint
+   exists) and POST /auth/otp/send with my phone number to check Twilio sends
+   a real SMS. Show me the curl outputs.
+
+DO NOT
+- Touch anything in mobile/ except mobile/app.json's extra.apiBaseUrl value.
+- Modify the design tokens, theme, fonts, screens, or components in mobile/.
+- Change the schema or backend route logic.
+- Run anything related to Plaid Link (M1, not now).
+- Use the Replit Agent for ongoing work after this — just complete this setup
+  and stop.
+
+When done, post in chat:
+- The backend public URL.
+- Confirmation that all Secrets are set (without printing values).
+- The result of the test SMS (did Twilio send to my phone?).
+- The git commit SHA of the app.json change.
