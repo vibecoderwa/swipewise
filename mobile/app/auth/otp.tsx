@@ -24,7 +24,8 @@ const RESEND_SECS = 60;
 
 export default function AuthOtp() {
   const router = useRouter();
-  const { phone } = useLocalSearchParams<{ phone: string }>();
+  const { phone, demo } = useLocalSearchParams<{ phone: string; demo?: string }>();
+  const isDemo = demo === '1';
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [resend, setResend] = useState(RESEND_SECS);
   const [submitting, setSubmitting] = useState(false);
@@ -69,6 +70,11 @@ export default function AuthOtp() {
 
   async function verify() {
     if (code.length !== 6 || !phone) return;
+    if (isDemo) {
+      await setStep('otp');
+      router.replace({ pathname: '/onboarding/plaid', params: { demo: '1' } });
+      return;
+    }
     try {
       setSubmitting(true);
       await api.verifyOtp(phone, code);
@@ -102,12 +108,12 @@ export default function AuthOtp() {
         scroll
         footer={
           <ChunkyBtn
-            label={submitting ? 'Verifying…' : 'Verify & continue'}
+            label={submitting ? 'Verifying…' : isDemo ? 'Continue (preview) →' : 'Verify & continue'}
             size="lg"
             fullWidth
             bg={t.colors.mint}
             fg={t.colors.ink}
-            disabled={code.length !== 6 || submitting}
+            disabled={(!isDemo && code.length !== 6) || submitting}
             onPress={verify}
           />
         }
@@ -115,7 +121,7 @@ export default function AuthOtp() {
         <StepHeader step="Step 2 of 3" />
 
         <View style={{ marginTop: 36 }}>
-          <Pill label="check your texts" bg={t.colors.sky} />
+          <Pill label={isDemo ? 'preview mode · no backend' : 'check your texts'} bg={isDemo ? t.colors.lemon : t.colors.sky} />
           <Text
             style={{
               fontFamily: t.fonts.display,

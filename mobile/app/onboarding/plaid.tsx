@@ -2,7 +2,7 @@
 // M0: button is mocked (no react-native-plaid-link-sdk yet); we route forward as if linked.
 
 import { View, Text, Pressable, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Screen } from '../../components/Screen';
 import { ChunkyBtn } from '../../components/Button';
 import { Pill } from '../../components/Pill';
@@ -11,6 +11,8 @@ import { setStep } from '../../lib/storage';
 
 export default function OnboardPlaid() {
   const router = useRouter();
+  const { demo } = useLocalSearchParams<{ demo?: string }>();
+  const isDemo = demo === '1';
 
   async function connect() {
     Alert.alert(
@@ -22,7 +24,7 @@ export default function OnboardPlaid() {
           text: 'Continue',
           onPress: async () => {
             await setStep('done');
-            router.replace('/home');
+            router.replace({ pathname: '/home', params: isDemo ? { demo: '1' } : {} });
           },
         },
       ],
@@ -31,7 +33,7 @@ export default function OnboardPlaid() {
 
   async function manual() {
     await setStep('plaid');
-    router.push('/onboarding/manual');
+    router.push({ pathname: '/onboarding/manual', params: isDemo ? { demo: '1' } : {} });
   }
 
   return (

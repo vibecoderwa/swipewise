@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, ScrollView, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { Screen } from '../components/Screen';
 import { ChunkyBtn } from '../components/Button';
@@ -16,8 +16,43 @@ type Phase = 'idle' | 'requesting' | 'denied' | 'fetching' | 'ready' | 'error';
 
 type Merchant = NonNullable<Awaited<ReturnType<typeof api.merchantsNear>>['merchants']>[number];
 
+const DEMO_MERCHANTS: Merchant[] = [
+  {
+    id: 'wf',
+    name: 'Whole Foods Market',
+    category: 'groceries',
+    lat: 0,
+    lng: 0,
+    distanceM: 140,
+    bestCard: { issuer: 'amex', name: 'Amex Gold', multiplier: 4 },
+    expectedReward: 9.6,
+  },
+  {
+    id: 'bb',
+    name: 'Blue Bottle Coffee',
+    category: 'dining',
+    lat: 0,
+    lng: 0,
+    distanceM: 320,
+    bestCard: { issuer: 'savor', name: 'Capital One Savor', multiplier: 4 },
+    expectedReward: 0.26,
+  },
+  {
+    id: 'unt',
+    name: 'United Terminal 3',
+    category: 'travel',
+    lat: 0,
+    lng: 0,
+    distanceM: 980,
+    bestCard: { issuer: 'chase', name: 'Sapphire Reserve', multiplier: 3 },
+    expectedReward: 12.36,
+  },
+];
+
 export default function Home() {
   const router = useRouter();
+  const { demo } = useLocalSearchParams<{ demo?: string }>();
+  const isDemo = demo === '1';
   const [phase, setPhase] = useState<Phase>('idle');
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
@@ -39,6 +74,11 @@ export default function Home() {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
       setCoords({ lat, lng });
+      if (isDemo) {
+        setMerchants(DEMO_MERCHANTS);
+        setPhase('ready');
+        return;
+      }
       const data = await api.merchantsNear(lat, lng, 1500);
       setMerchants(data.merchants ?? []);
       setPhase('ready');
@@ -46,7 +86,7 @@ export default function Home() {
       setError(err instanceof Error ? err.message : 'Unknown error');
       setPhase('error');
     }
-  }, []);
+  }, [isDemo]);
 
   useEffect(() => {
     refresh();
@@ -108,7 +148,10 @@ export default function Home() {
         </Pressable>
       </View>
 
-      <Pill label="📍 nearby — m0 preview" bg={t.colors.sky} />
+      <Pill
+        label={isDemo ? 'preview mode · sample data' : '📍 nearby — m0 preview'}
+        bg={isDemo ? t.colors.lemon : t.colors.sky}
+      />
       <Text
         style={{
           fontFamily: t.fonts.display,
