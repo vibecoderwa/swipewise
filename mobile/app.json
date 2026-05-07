@@ -41,7 +41,7 @@
       ]
     ],
     "extra": {
-      "apiBaseUrl": "http://localhost:8080"
+      "apiBaseUrl": "https://d4f01eef-67b5-4e2e-8496-0fc84f041b91-00-3en5cwllt8o4f.kirk.replit.dev:8080"
     }
   }
 }
