@@ -44,6 +44,7 @@ expertMode = true
 
 [userenv.shared]
 NODE_ENV = "development"
+PLAID_ENV = "sandbox"
 
 [workflows]
 runButton = "Project"
