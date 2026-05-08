@@ -93,6 +93,51 @@ router.post('/exchange', requireAuth, async (req, res) => {
   res.json({ item_id, institution: instName });
 });
 
+// GET /plaid/link-page  — serves an HTML shim that opens Plaid Link inside a WebView
+// Used by the mobile app via expo-web-browser openAuthSessionAsync.
+router.get('/link-page', (req, res) => {
+  const token = String(req.query.token ?? '');
+  if (!token) return res.status(400).send('Missing token');
+  const tokenJson = JSON.stringify(token);
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.set('Cache-Control', 'no-store');
+  res.send(`<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Connect your bank</title>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+  <style>
+    html,body{margin:0;padding:0;height:100%;background:#fafaf7;font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#1a1a1a}
+    .center{height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
+  </style>
+</head>
+<body>
+  <div class="center"><div>Opening Plaid Link…</div></div>
+  <script>
+    (function(){
+      function back(qs){ window.location.href = 'swipewise://plaid-callback?' + qs; }
+      try {
+        var handler = Plaid.create({
+          token: ${tokenJson},
+          onSuccess: function(public_token){
+            back('public_token=' + encodeURIComponent(public_token));
+          },
+          onExit: function(err){
+            if (err) back('error=' + encodeURIComponent(err.error_code || 'unknown'));
+            else back('cancelled=1');
+          },
+        });
+        handler.open();
+      } catch (e) {
+        back('error=' + encodeURIComponent(String(e && e.message || e)));
+      }
+    })();
+  </script>
+</body>
+</html>`);
+});
+
 // POST /plaid/webhook  — called by Plaid on new transactions
 router.post('/webhook', async (req, res) => {
   const { webhook_type, webhook_code, item_id } = req.body as {

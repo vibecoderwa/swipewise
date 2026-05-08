@@ -1,32 +1,84 @@
 // OnboardA_Plaid — Plaid as primary path. FR-ONB-01, FR-ONB-04 (permissions priming).
-// M0: button is mocked (no react-native-plaid-link-sdk yet); we route forward as if linked.
+// M1: real Plaid Link via WebBrowser.openAuthSessionAsync against backend /plaid/link-page.
 
+import { useState } from 'react';
 import { View, Text, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Screen } from '../../components/Screen';
 import { ChunkyBtn } from '../../components/Button';
 import { Pill } from '../../components/Pill';
 import { theme as t } from '../../theme';
 import { setStep } from '../../lib/storage';
+import { api } from '../../lib/api';
+
+const TOKEN_KEY = 'swipewise.accessToken';
+const RETURN_URL = 'swipewise://plaid-callback';
+
+async function authedJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const tok = await AsyncStorage.getItem(TOKEN_KEY);
+  const headers = new Headers(init.headers);
+  headers.set('Content-Type', 'application/json');
+  if (tok) headers.set('Authorization', `Bearer ${tok}`);
+  const res = await fetch(`${api.baseUrl}${path}`, { ...init, headers });
+  const text = await res.text();
+  const body = text ? JSON.parse(text) : {};
+  if (!res.ok) throw new Error((body as { error?: string }).error ?? `Request failed (${res.status})`);
+  return body as T;
+}
 
 export default function OnboardPlaid() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   async function connect() {
-    Alert.alert(
-      'Plaid Link (M0 stub)',
-      'Real Plaid Link wires up at M1. For now, we mark you as linked and continue.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Continue',
-          onPress: async () => {
-            await setStep('done');
-            router.replace('/home');
-          },
-        },
-      ],
-    );
+    if (loading) return;
+    setLoading(true);
+    try {
+      const { link_token } = await authedJson<{ link_token: string }>(
+        '/plaid/link-token',
+        { method: 'POST', body: '{}' },
+      );
+
+      const linkUrl = `${api.baseUrl}/plaid/link-page?token=${encodeURIComponent(link_token)}`;
+      const result = await WebBrowser.openAuthSessionAsync(linkUrl, RETURN_URL);
+
+      if (result.type !== 'success' || !result.url) {
+        return; // user cancelled — silent
+      }
+      if (!result.url.startsWith(RETURN_URL)) {
+        Alert.alert("Couldn't connect", 'Unexpected redirect from Plaid.');
+        return;
+      }
+
+      const url = new URL(result.url);
+      const publicToken = url.searchParams.get('public_token');
+      const cancelled = url.searchParams.get('cancelled');
+      const error = url.searchParams.get('error');
+
+      if (cancelled) return;
+      if (error) {
+        Alert.alert("Couldn't connect", `Plaid error: ${error}`);
+        return;
+      }
+      if (!publicToken) {
+        Alert.alert("Couldn't connect", 'No token returned from Plaid.');
+        return;
+      }
+
+      await authedJson('/plaid/exchange', {
+        method: 'POST',
+        body: JSON.stringify({ public_token: publicToken }),
+      });
+
+      await setStep('done');
+      router.replace('/home');
+    } catch (e) {
+      Alert.alert("Couldn't connect", e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function manual() {
@@ -146,7 +198,11 @@ export default function OnboardPlaid() {
           Works with 12,000+ US banks. Takes ~20 seconds. We auto-detect your credit cards.
         </Text>
         <View style={{ marginTop: 14 }}>
-          <ChunkyBtn label="Connect my bank" fullWidth onPress={connect} />
+          <ChunkyBtn
+            label={loading ? 'Opening…' : 'Connect my bank'}
+            fullWidth
+            onPress={connect}
+          />
         </View>
       </View>
 
