@@ -13,9 +13,15 @@ router.post('/otp/send', async (req, res) => {
     return res.status(400).json({ error: 'Invalid phone number. Use E.164 format (+12125551234).' });
   }
 
-  const code = await issueOtp(phone);
-  await sendOtp(phone, code);
-  res.json({ sent: true });
+  try {
+    const code = await issueOtp(phone);
+    await sendOtp(phone, code);
+    res.json({ sent: true });
+  } catch (err) {
+    const e = err as { code?: number; message?: string };
+    console.error('[otp/send]', e.code ?? '', e.message ?? err);
+    res.status(502).json({ error: 'Could not send code. Please try again.' });
+  }
 });
 
 // POST /auth/otp/verify
