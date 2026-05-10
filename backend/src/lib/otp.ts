@@ -47,15 +47,23 @@ export async function sendOtp(phone: string, code: string): Promise<void> {
   const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER } = process.env;
 
   if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_PHONE_NUMBER) {
+    console.log(`[otp] TWILIO PATH: env-vars-detected | from=${TWILIO_PHONE_NUMBER} to=${phone}`);
     const twilio = (await import('twilio')).default;
     const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
-    await client.messages.create({
-      body: `Your Swipewise code is ${code}. Don't share it with anyone. Not even your dog.`,
-      from: TWILIO_PHONE_NUMBER,
-      to:   phone,
-    });
+    try {
+      const msg = await client.messages.create({
+        body: `Your Swipewise code is ${code}. Don't share it with anyone. Not even your dog.`,
+        from: TWILIO_PHONE_NUMBER,
+        to:   phone,
+      });
+      console.log(`[otp] Twilio response: sid=${msg.sid} status=${msg.status} errorCode=${msg.errorCode ?? 'none'} errorMessage=${msg.errorMessage ?? 'none'}`);
+    } catch (err: unknown) {
+      const e = err as { code?: number; message?: string; moreInfo?: string; status?: number };
+      console.error(`[otp] Twilio ERROR: code=${e.code} status=${e.status} message=${e.message} moreInfo=${e.moreInfo}`);
+      throw err; // re-throw so route returns 502
+    }
   } else {
-    // Dev mode — log to console so you can test without Twilio credentials
+    console.log(`[otp] TWILIO PATH: dev-fallback (missing vars: SID=${!!TWILIO_ACCOUNT_SID} TOKEN=${!!TWILIO_AUTH_TOKEN} FROM=${!!TWILIO_PHONE_NUMBER})`);
     console.log(`[otp] Code for ${phone}: ${code}`);
   }
 }

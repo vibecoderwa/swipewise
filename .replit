@@ -4,11 +4,16 @@ hidden = [".config", "package-lock.json", "node_modules", "dist", "swipewise.db"
 
 [nix]
 channel = "stable-24_05"
+packages = ["psmisc"]
 
 [deployment]
 run = ["bash", "-c", "cd backend && npm start"]
 deploymentTarget = "vm"
 build = ["bash", "-c", "cd backend && npm install && npm run build"]
+
+[[ports]]
+localPort = 3000
+externalPort = 3003
 
 [[ports]]
 localPort = 3001
