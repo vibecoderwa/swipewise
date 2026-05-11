@@ -175,7 +175,7 @@ export default function AuthPhone() {
             fontFamily: t.fonts.bodyRegular,
           }}
         >
-          🔒 We never share your number. Unsubscribe on first text if you change your mind.
+          We never share your number. Unsubscribe on first text if you change your mind.
         </Text>
 
         {/* Why no password card */}

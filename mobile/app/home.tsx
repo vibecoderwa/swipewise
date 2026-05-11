@@ -149,7 +149,7 @@ export default function Home() {
       </View>
 
       <Pill
-        label={isDemo ? 'preview mode · sample data' : '📍 nearby — m0 preview'}
+        label={isDemo ? 'preview mode · sample data' : 'nearby — m0 preview'}
         bg={isDemo ? t.colors.lemon : t.colors.sky}
       />
       <Text

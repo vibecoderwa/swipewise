@@ -1,63 +1,73 @@
-// Design tokens — ported from project/mocks/system.jsx (the `T` object).
-// Editorial palette. No gradients. Hard offset shadows. 1.5px ink borders.
-// FRD §13.5: monochrome by default, accent colors are information.
+// Design tokens — React Native facade. Source of truth lives at:
+//   mobile/src/theme/tokens.ts  (provided by Claude Design handoff)
+//
+// This file adapts the canonical web tokens into React Native shapes:
+// - `theme.colors`     mirrors `tokens.color`
+// - `theme.fonts`      maps to the specific Google Font family names loaded via
+//                      @expo-google-fonts in app/_layout.tsx (web tokens use CSS
+//                      stacks that RN can't resolve)
+// - `theme.radii`      mirrors `tokens.radius`
+// - `theme.space`      mirrors `tokens.space`
+// - `theme.type`       mirrors `tokens.type` with `fontFamily` resolved to RN names
+// - `theme.shadow`     RN-native equivalents of `tokens.shadow.chunky`
+// - `theme.motion`     mirrors `tokens.motion`
+// - `theme.border`     ink-border presets (no equivalent in tokens; preset for DX)
+//
+// Per CLAUDE_CODE_BRIEF: components consume tokens, never raw hex. Import
+// `theme` for the styled scales and font family names.
+
+import { color, radius, space, motion } from './src/theme/tokens';
+
+const fonts = {
+  display:        'Fraunces_900Black',
+  displayItalic:  'Fraunces_900Black_Italic',
+  displayBold:    'Fraunces_700Bold',
+  displayRegular: 'Fraunces_400Regular',
+  bodyRegular:    'InterTight_400Regular',
+  bodyMedium:     'InterTight_500Medium',
+  bodySemiBold:   'InterTight_600SemiBold',
+  bodyBold:       'InterTight_700Bold',
+  bodyExtraBold:  'InterTight_800ExtraBold',
+  monoMedium:     'JetBrainsMono_500Medium',
+  monoBold:       'JetBrainsMono_700Bold',
+} as const;
+
+const ink = color.ink;
 
 export const theme = {
-  colors: {
-    ink:      '#1A1814',
-    paper:    '#F7F2E9',
-    cream:    '#EFE7D7',
+  colors: color,
+  fonts,
+  radii: radius,
+  space,
+  motion,
 
-    lemon:    '#D4B254',
-    lemonDk:  '#A88A36',
-    mint:     '#9CB49A',
-    mintDk:   '#6B8A74',
-    coral:    '#C26B5A',
-    coralDk:  '#9A4F3F',
-    sky:      '#8BA5B8',
-    skyDk:    '#5A7A8E',
-    plum:     '#8C7A9E',
-    plumDk:   '#5F5070',
+  // Resolved type scale: same numeric/weight/tracking values as tokens.type,
+  // but `fontFamily` is the RN-loaded family name rather than a CSS stack.
+  type: {
+    display1: { fontSize: 64, fontFamily: fonts.display,       letterSpacing: -2.5 },
+    display2: { fontSize: 48, fontFamily: fonts.display,       letterSpacing: -1.5 },
+    title1:   { fontSize: 32, fontFamily: fonts.displayBold,   letterSpacing: -0.6 },
+    title2:   { fontSize: 24, fontFamily: fonts.displayBold,   letterSpacing: -0.3 },
+    title3:   { fontSize: 20, fontFamily: fonts.bodySemiBold,  letterSpacing: -0.2 },
+    body:     { fontSize: 16, fontFamily: fonts.bodyMedium,    letterSpacing: 0 },
+    bodySm:   { fontSize: 14, fontFamily: fonts.bodyMedium,    letterSpacing: 0 },
+    caption:  { fontSize: 12, fontFamily: fonts.bodySemiBold,  letterSpacing: 0.12 },
+    mono:     { fontSize: 13, fontFamily: fonts.monoMedium,    letterSpacing: 0 },
+  },
 
-    smoke:    '#EDE7DA',
-    haze:     '#D9D0BD',
-    graphite: '#3A362F',
-    dim:      '#8C8578',
-    line:     '#2A261F',
-    hairline: '#DCD4C1',
-
-    amex:      '#AE8B3B',
-    amexWash:  '#F0E8D3',
-    chase:     '#2B4468',
-    chaseWash: '#DCE2ED',
-    savor:     '#7A3848',
-    savorWash: '#EBDAE0',
-  },
-  fonts: {
-    display: 'Fraunces_900Black',
-    displayItalic: 'Fraunces_900Black_Italic',
-    bodyRegular: 'InterTight_400Regular',
-    bodyMedium:  'InterTight_500Medium',
-    bodySemiBold: 'InterTight_600SemiBold',
-    bodyBold:    'InterTight_700Bold',
-    bodyExtraBold: 'InterTight_800ExtraBold',
-    monoMedium:  'JetBrainsMono_500Medium',
-    monoBold:    'JetBrainsMono_700Bold',
-  },
-  radii: {
-    sm: 8, md: 12, lg: 14, xl: 18, pill: 9999,
-  },
-  // Signature shadow — hard, offset, no blur. RN translates via shadow* + elevation.
+  // Hard offset shadow — the brand's "chunky" treatment. RN doesn't render
+  // box-shadow with 0 blur quite the same as web, but the offset is visible.
   shadow: {
-    chunky:  { shadowColor: '#1A1814', shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0, elevation: 0 },
-    chunkier: { shadowColor: '#1A1814', shadowOffset: { width: 3, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 0 },
-    chunkiest: { shadowColor: '#1A1814', shadowOffset: { width: 4, height: 4 }, shadowOpacity: 1, shadowRadius: 0, elevation: 0 },
-    soft:     { shadowColor: '#1A1814', shadowOffset: { width: 2, height: 2 }, shadowOpacity: 0.85, shadowRadius: 0, elevation: 0 },
+    chunky:    { shadowColor: ink, shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1,    shadowRadius: 0, elevation: 0 },
+    chunkier:  { shadowColor: ink, shadowOffset: { width: 3, height: 3 }, shadowOpacity: 1,    shadowRadius: 0, elevation: 0 },
+    chunkiest: { shadowColor: ink, shadowOffset: { width: 4, height: 4 }, shadowOpacity: 1,    shadowRadius: 0, elevation: 0 },
+    soft:      { shadowColor: ink, shadowOffset: { width: 2, height: 2 }, shadowOpacity: 0.85, shadowRadius: 0, elevation: 0 },
   },
+
   border: {
-    thin:   { borderWidth: 1.5, borderColor: '#1A1814' },
-    medium: { borderWidth: 2,   borderColor: '#1A1814' },
-    bold:   { borderWidth: 2.5, borderColor: '#1A1814' },
+    thin:   { borderWidth: 1.5, borderColor: ink },
+    medium: { borderWidth: 2,   borderColor: ink },
+    bold:   { borderWidth: 2.5, borderColor: ink },
   },
 } as const;
 

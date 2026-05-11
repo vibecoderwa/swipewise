@@ -154,9 +154,9 @@ export default function OnboardPlaid() {
 
       {/* Trust strip */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 18 }}>
-        <Pill label="🔒 256-bit encrypted" bg={t.colors.cream} />
-        <Pill label="👁 read-only" bg={t.colors.cream} />
-        <Pill label="🚫 no selling" bg={t.colors.cream} />
+        <Pill label="256-bit encrypted" bg={t.colors.cream} />
+        <Pill label="read-only" bg={t.colors.cream} />
+        <Pill label="no selling" bg={t.colors.cream} />
       </View>
 
       {/* Divider */}
@@ -208,7 +208,7 @@ export default function OnboardPlaid() {
               justifyContent: 'center',
             }}
           >
-            <Text style={{ fontSize: 20 }}>✍︎</Text>
+            <Text style={{ fontFamily: t.fonts.display, fontSize: 22, lineHeight: 26 }}>+</Text>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: t.fonts.bodyExtraBold, fontSize: 15, color: t.colors.ink }}>

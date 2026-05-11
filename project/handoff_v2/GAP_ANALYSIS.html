@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Swipewise — Repo vs. FRD Gap Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,800&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1A1814; --paper:#F7F2E9; --cream:#EFE7D7;
+    --lemon:#D4B254; --mint:#9CB49A; --coral:#C26B5A; --sky:#8BA5B8; --plum:#8C7A9E;
+    --graphite:#3A362F; --dim:#8C8578; --hairline:#DCD4C1;
+    --shadow:2px 2px 0 0 var(--ink); --border:1.5px solid var(--ink);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:"Inter Tight",sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .page{max-width:920px;margin:0 auto;padding:64px 40px 120px}
+  .doc-tag{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;background:var(--ink);color:var(--paper);padding:6px 10px;margin-bottom:24px}
+  h1.hero{font-family:"Fraunces",serif;font-weight:800;font-style:italic;font-size:72px;line-height:0.95;letter-spacing:-0.02em;margin:0 0 12px}
+  .hero-sub{font-family:"Fraunces",serif;font-size:20px;line-height:1.4;color:var(--graphite);margin:0 0 36px;max-width:640px}
+
+  .meta{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:var(--border);padding-bottom:18px;margin-bottom:48px;gap:24px;flex-wrap:wrap}
+  .meta .label{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:6px}
+  .meta .val{font-size:14px;font-weight:500}
+
+  .scorecard{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:var(--border);box-shadow:var(--shadow);background:var(--paper);margin-bottom:48px}
+  .score{padding:18px 16px;border-right:1px solid var(--hairline)}
+  .score:last-child{border-right:none}
+  .score .num{font-family:"Fraunces",serif;font-style:italic;font-weight:800;font-size:46px;line-height:1;letter-spacing:-0.02em}
+  .score .lbl{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);margin-top:6px;display:block}
+
+  section{margin:0 0 48px;scroll-margin-top:24px}
+  .section-num{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:6px}
+  h2.section-title{font-family:"Fraunces",serif;font-weight:600;font-size:32px;line-height:1.1;letter-spacing:-0.01em;margin:0 0 8px}
+  .section-lede{font-family:"Fraunces",serif;font-style:italic;font-size:17px;color:var(--graphite);margin:0 0 20px;max-width:640px}
+  h3{font-family:"Inter Tight",sans-serif;font-size:14px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin:24px 0 10px;color:var(--graphite)}
+
+  .row{display:grid;grid-template-columns:90px 1fr 110px;gap:14px;align-items:start;border-bottom:1px solid var(--hairline);padding:12px 0}
+  .row:last-child{border-bottom:none}
+  .row .id{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink);background:var(--cream);border:1px solid var(--hairline);padding:3px 8px;align-self:start;width:fit-content}
+  .row .body p{margin:0 0 4px;font-size:14.5px;line-height:1.5}
+  .row .body .desc{color:var(--graphite);font-size:13px}
+  .status{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 7px;border:1px solid var(--ink);align-self:start;white-space:nowrap;text-align:center}
+  .status.done{background:var(--mint);color:var(--ink)}
+  .status.partial{background:var(--lemon);color:var(--ink)}
+  .status.missing{background:var(--coral);color:var(--paper);border-color:var(--coral)}
+  .status.na{background:var(--paper);color:var(--dim);border-color:var(--dim)}
+
+  .callout{border:var(--border);box-shadow:var(--shadow);padding:18px 20px;margin:18px 0 22px;background:var(--paper)}
+  .callout.coral{background:color-mix(in oklab, var(--coral) 18%, var(--paper))}
+  .callout.lemon{background:color-mix(in oklab, var(--lemon) 22%, var(--paper))}
+  .callout.mint{background:color-mix(in oklab, var(--mint) 22%, var(--paper))}
+  .callout .tag{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-weight:600;margin-bottom:6px;display:block}
+  .callout p{margin:0 0 6px;font-size:14px}
+  .callout p:last-child{margin-bottom:0}
+
+  ul.bullets{margin:0;padding:0;list-style:none;max-width:680px}
+  ul.bullets li{position:relative;padding:6px 0 6px 22px;border-bottom:1px dashed var(--hairline);font-size:14.5px}
+  ul.bullets li:last-child{border-bottom:none}
+  ul.bullets li::before{content:"";position:absolute;left:0;top:14px;width:8px;height:8px;background:var(--ink)}
+
+  code{font-family:"JetBrains Mono",monospace;font-size:12px;background:var(--cream);padding:1px 5px;border-radius:3px}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:0.06em;margin-bottom:32px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend .swatch{display:inline-block;width:14px;height:14px;border:1px solid var(--ink)}
+  .swatch.done{background:var(--mint)}
+  .swatch.partial{background:var(--lemon)}
+  .swatch.missing{background:var(--coral)}
+  .swatch.na{background:var(--paper)}
+
+  footer{border-top:var(--border);padding-top:18px;margin-top:48px;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim)}
+
+  @media (max-width:720px){
+    .page{padding:40px 22px 80px}
+    h1.hero{font-size:48px}
+    .scorecard{grid-template-columns:repeat(2,1fr)}
+    .row{grid-template-columns:1fr;gap:6px}
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <span class="doc-tag">Gap analysis · vs FRD v1.0</span>
+  <h1 class="hero">What's<br>missing.</h1>
+  <p class="hero-sub">A walk through <code>github.com/vibecoderwa/swipewise</code> mapped against the functional requirements document. Status per requirement, then the structural gaps.</p>
+
+  <div class="meta">
+    <div><span class="label">Repo</span><span class="val">vibecoderwa/swipewise @ main</span></div>
+    <div><span class="label">Stack</span><span class="val">React (Vite) + Express + SQLite</span></div>
+    <div><span class="label">Reviewed</span><span class="val">May 4, 2026</span></div>
+  </div>
+
+  <div class="scorecard">
+    <div class="score"><div class="num">~18</div><span class="lbl">Done</span></div>
+    <div class="score"><div class="num">~14</div><span class="lbl">Partial</span></div>
+    <div class="score"><div class="num">~25</div><span class="lbl">Missing</span></div>
+    <div class="score"><div class="num">~6</div><span class="lbl">Out of scope (web)</span></div>
+  </div>
+
+  <div class="legend">
+    <span><span class="swatch done"></span> Done</span>
+    <span><span class="swatch partial"></span> Partial</span>
+    <span><span class="swatch missing"></span> Missing</span>
+    <span><span class="swatch na"></span> N/A on web</span>
+  </div>
+
+  <!-- TL;DR -->
+  <section>
+    <span class="section-num">TL;DR</span>
+    <h2 class="section-title">The repo is a working web prototype, not the spec'd app</h2>
+    <p class="section-lede">It nails the data plumbing — Plaid, categorization, insights, credits. It's missing the entire pre-swipe layer, which is the product's reason to exist.</p>
+
+    <div class="callout coral">
+      <span class="tag">Biggest gap</span>
+      <p><strong>Platform mismatch.</strong> The FRD specifies an iOS-first Expo / React Native app with native Swift widgets. The repo is a web app (Vite + React DOM). No Expo, no React Native, no WidgetKit, no geofencing, no push.</p>
+      <p>That's not a bug — it's a deliberate prototype-first move — but it means roughly half the FRD has zero implementation surface yet.</p>
+    </div>
+
+    <div class="callout lemon">
+      <span class="tag">What's solid</span>
+      <p>Plaid Link → exchange → sync → categorization → insights → credit tracking. The recommendations engine even implements <strong>FR-ENG-06 confidence</strong> (high/medium/low based on net-value gap). Auth flow with phone + OTP is wired (mocked SMS).</p>
+    </div>
+
+    <div class="callout mint">
+      <span class="tag">What to do next</span>
+      <p>Two parallel tracks: <strong>(1)</strong> finish the analytics layer in the web prototype to validate the model end-to-end; <strong>(2)</strong> start the Expo migration with M0 skeleton, porting <code>core/rewards.ts</code> first.</p>
+    </div>
+  </section>
+
+  <!-- Section 03 Auth -->
+  <section>
+    <span class="section-num">§03</span>
+    <h2 class="section-title">Authentication</h2>
+
+    <div class="row"><span class="id">FR-AUTH-01</span><div class="body"><p><strong>Phone-number sign-in</strong></p><p class="desc">AuthPhone screen + <code>/api/auth/otp/send</code>. SMS provider is mocked — code is hardcoded to <code>421906</code> in non-prod.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-AUTH-02</span><div class="body"><p><strong>OTP verification</strong></p><p class="desc">10-min expiry ✓, attempt limit (5 not 3) ≈, paste-to-fill / auto-advance not verified, no resend timer logic on backend.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-AUTH-03</span><div class="body"><p><strong>Session tokens</strong></p><p class="desc">No JWT, no refresh token, no Keychain. Identity is just <code>x-user-id</code> header — anyone with the ID has access.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-AUTH-04</span><div class="body"><p><strong>Sign-out &amp; account deletion</strong></p><p class="desc"><code>handleSignOut</code> clears local state. No deletion endpoint, no Plaid item revocation, no audit log.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-AUTH-05</span><div class="body"><p><strong>Biometric re-auth</strong></p><p class="desc">N/A on web; required when Expo build lands.</p></div><span class="status na">N/A</span></div>
+  </section>
+
+  <!-- Section 04 Onboarding -->
+  <section>
+    <span class="section-num">§04</span>
+    <h2 class="section-title">Onboarding &amp; bank linking</h2>
+
+    <div class="row"><span class="id">FR-ONB-01</span><div class="body"><p><strong>Plaid Link as primary path</strong></p><p class="desc"><code>react-plaid-link</code> wired through <code>/api/plaid/link_token</code> + <code>/exchange</code>. Multiple institutions supported.</p></div><span class="status done">Done</span></div>
+    <div class="row"><span class="id">FR-ONB-02</span><div class="body"><p><strong>Manual card selection (fallback)</strong></p><p class="desc"><code>/api/manual_cards</code> persists picks against <code>data/cards.json</code> (~20 cards). Catalog UI present in Onboarding.</p></div><span class="status done">Done</span></div>
+    <div class="row"><span class="id">FR-ONB-03</span><div class="body"><p><strong>Plaid item → owned cards mapping</strong></p><p class="desc"><code>matchCardFromAccount</code> auto-matches; user can re-match via <code>/accounts/:id/match</code>. Unrecognized cards default to null (not surfaced as "tracked, not optimized").</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-ONB-04</span><div class="body"><p><strong>Permissions priming</strong></p><p class="desc">No location or notification rationale screens. Plaid rationale is implicit in the Plaid Link flow only.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-ONB-05</span><div class="body"><p><strong>Resumable onboarding</strong></p><p class="desc">Stage persisted in localStorage; resumes correctly.</p></div><span class="status done">Done</span></div>
+    <div class="row"><span class="id">FR-ONB-06</span><div class="body"><p><strong>Backfill</strong></p><p class="desc"><code>/api/sync</code> only fetches last 30 days, capped at 250 records. FRD says 24 months / 5,000 records.</p></div><span class="status partial">Partial</span></div>
+  </section>
+
+  <!-- Section 05/06 -->
+  <section>
+    <span class="section-num">§05–06</span>
+    <h2 class="section-title">Cards, transactions &amp; categorization</h2>
+
+    <div class="row"><span class="id">FR-CARD-01</span><div class="body"><p><strong>Shared rewards module</strong></p><p class="desc"><code>api/cards.js</code> + <code>data/cards.json</code> on backend; client reads via API. Not yet a shared <code>core/rewards.ts</code>; client cannot compute offline.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-CARD-02</span><div class="body"><p><strong>Multiplier resolution</strong></p><p class="desc"><code>rewardRate(card, category)</code> exists. Caps (quarterly/annual) not visible in the data shape — likely flat-rate only.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-CARD-03</span><div class="body"><p><strong>Cents-per-point overrides</strong></p><p class="desc">No CPP modeling. Rates are expressed as percentage cash-equivalent; no per-card CPP slider.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-CARD-04</span><div class="body"><p><strong>Credits &amp; perks</strong></p><p class="desc"><code>/api/credits</code> + toggle endpoint + per-card accordion. Strong implementation.</p></div><span class="status done">Done</span></div>
+    <div class="row"><span class="id">FR-TX-01</span><div class="body"><p><strong>Webhook-driven sync</strong></p><p class="desc">Pull-only via <code>transactionsGet</code>. No <code>/transactions/sync</code> cursor, no webhook handler.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-TX-02</span><div class="body"><p><strong>Idempotent upserts</strong></p><p class="desc"><code>INSERT OR REPLACE</code> by transaction_id ✓. No soft-delete or removed-tx handling.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-TX-03</span><div class="body"><p><strong>Re-link / ITEM_LOGIN_REQUIRED</strong></p><p class="desc">No error-state surfacing, no Plaid Link update mode.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-TX-04</span><div class="body"><p><strong>15-bucket category map</strong></p><p class="desc"><code>categoryFromPlaid</code> exists but maps to 7 buckets, not 15 (groceries, dining, gas, travel, online_shopping, streaming, other). FRD lists 15.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-TX-05</span><div class="body"><p><strong>Per-transaction override</strong></p><p class="desc">Not implemented.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-TX-06</span><div class="body"><p><strong>Merchant inference</strong></p><p class="desc"><code>src/lib/merchantInfer.js</code> exists; unclear if used by a "top recurring" view since geofencing isn't built.</p></div><span class="status partial">Partial</span></div>
+  </section>
+
+  <!-- Engine -->
+  <section>
+    <span class="section-num">§07</span>
+    <h2 class="section-title">Reward computation engine</h2>
+
+    <div class="row"><span class="id">FR-ENG-01</span><div class="body"><p><strong>computeAll(state)</strong></p><p class="desc"><code>/api/insights</code> computes per-tx best card, missed rewards, total missed. No per-card net value or annualized total in one structured Result object.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-ENG-02</span><div class="body"><p><strong>monthlyTimeline</strong></p><p class="desc">Not built. Analytics screen exists but no 12-month series.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-ENG-03</span><div class="body"><p><strong>Best-card-for-merchant</strong></p><p class="desc"><code>bestCardFor(category, cards)</code> works on category, not merchantId. No basket-aware variant.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-ENG-04</span><div class="body"><p><strong>Determinism</strong></p><p class="desc">Engine looks pure. No unit tests pinning behavior.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-ENG-05</span><div class="body"><p><strong>Offline-capable client re-rank</strong></p><p class="desc">Client always round-trips to the API.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-ENG-06</span><div class="body"><p><strong>Confidence score</strong></p><p class="desc">Implemented in <code>recommendations.js</code> using net-value gap (high/medium/low). Not yet propagated to the home reco rows.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-ENG-07</span><div class="body"><p><strong>Basket-aware uplift</strong></p><p class="desc">Not built — recommendations operate on annualized category spend, not per-merchant baskets.</p></div><span class="status missing">Missing</span></div>
+  </section>
+
+  <!-- Geo / push / widgets -->
+  <section>
+    <span class="section-num">§08–10</span>
+    <h2 class="section-title">Geofencing, notifications, widgets</h2>
+
+    <p>This is the FRD's <em>raison d'être</em>. The repo has no implementation here.</p>
+
+    <div class="row"><span class="id">FR-GEO-01..05</span><div class="body"><p><strong>Geofencing &amp; nearby endpoint</strong></p><p class="desc"><code>src/lib/nearby.js</code> hints at a nearby concept, but no <code>/merchants/near</code> endpoint, no geofence registration, no background task.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-NOT-01..05</span><div class="body"><p><strong>Push &amp; Live Activity</strong></p><p class="desc">No local notifications, no APNs, no Live Activity. Web prototype can't deliver any of this.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-WID-01..06</span><div class="body"><p><strong>WidgetKit + lock-screen widgets</strong></p><p class="desc">Requires Swift target via <code>expo prebuild</code>. Not started.</p></div><span class="status missing">Missing</span></div>
+  </section>
+
+  <!-- Home / Credits / Manual / Visual -->
+  <section>
+    <span class="section-num">§11–13.5</span>
+    <h2 class="section-title">In-app surfaces</h2>
+
+    <div class="row"><span class="id">FR-HOME-01</span><div class="body"><p><strong>Geo-ranked merchant list</strong></p><p class="desc">Home screen shows insights/recos, not a location-aware ranked merchant list.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-HOME-02</span><div class="body"><p><strong>Map peek</strong></p><p class="desc">Not implemented.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-HOME-03</span><div class="body"><p><strong>Merchant detail</strong></p><p class="desc">Not implemented as a per-merchant view with history.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-HOME-04</span><div class="body"><p><strong>Period toggle (M/Q/Y)</strong></p><p class="desc">Not visible.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-HOME-05</span><div class="body"><p><strong>Realized vs. potential delta</strong></p><p class="desc"><code>total_missed_rewards</code> is computed but not paired with a "realized" companion in a single delta frame.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-HOME-06</span><div class="body"><p><strong>"Left on the table" frame</strong></p><p class="desc">Per-tx <code>missed_rewards</code> exists; no kindly-framed UI list, no "I had a reason" dismiss.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-HOME-07</span><div class="body"><p><strong>Confidence on reco rows</strong></p><p class="desc">Confidence emitted in API; not visualized on the home list.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-CRD-01</span><div class="body"><p><strong>Per-card credit accordion</strong></p><p class="desc">Implemented.</p></div><span class="status done">Done</span></div>
+    <div class="row"><span class="id">FR-CRD-02</span><div class="body"><p><strong>Durable Travel Credit hero</strong></p><p class="desc">Treated as a normal credit; no hero callout above the accordion.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-CRD-03</span><div class="body"><p><strong>Auto-detect credits from transactions</strong></p><p class="desc">Captured state is purely manual.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-CRD-04</span><div class="body"><p><strong>Expiring soon</strong></p><p class="desc">No expiry tracking or coral indicator.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-CRD-05</span><div class="body"><p><strong>Realized vs. potential side-by-side</strong></p><p class="desc"><code>/api/credits</code> returns both totals. UI verification pending.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-MAN-01..04</span><div class="body"><p><strong>Manual-adder swipe log</strong></p><p class="desc">Manual card selection works (FR-ONB-02). The "log a swipe", self-built history, and Plaid upgrade dedup paths are not built.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-VIS-01..04</span><div class="body"><p><strong>Anti-loud aesthetic</strong></p><p class="desc">A 47KB <code>styles.css</code> defines the look. Adherence to "color = state, never decoration" hasn't been audited; needs visual review.</p></div><span class="status partial">Partial</span></div>
+  </section>
+
+  <!-- Settings / privacy / nfr -->
+  <section>
+    <span class="section-num">§13–15</span>
+    <h2 class="section-title">Settings, privacy, NFRs</h2>
+
+    <div class="row"><span class="id">FR-SET-01</span><div class="body"><p><strong>CPP overrides</strong></p><p class="desc">No CPP knobs in Settings.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-SET-02</span><div class="body"><p><strong>Annual fee toggles</strong></p><p class="desc">Not exposed.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-SET-03</span><div class="body"><p><strong>Manage Plaid items</strong></p><p class="desc">Settings screen lists accounts; no per-item disconnect / token revocation.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-SET-04</span><div class="body"><p><strong>Notification &amp; quiet hours</strong></p><p class="desc">N/A on web; pending Expo build.</p></div><span class="status na">N/A</span></div>
+    <div class="row"><span class="id">FR-SET-06</span><div class="body"><p><strong>Data export</strong></p><p class="desc">No CSV/JSON export.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-SEC-01</span><div class="body"><p><strong>Server-only Plaid tokens</strong></p><p class="desc">Stored server-side ✓. <strong>Plaintext in SQLite</strong> — no envelope encryption / KMS.</p></div><span class="status partial">Partial</span></div>
+    <div class="row"><span class="id">FR-SEC-02</span><div class="body"><p><strong>TLS &amp; cert pinning</strong></p><p class="desc">TLS via Replit; pinning N/A on web.</p></div><span class="status na">N/A</span></div>
+    <div class="row"><span class="id">FR-SEC-03</span><div class="body"><p><strong>Plaid Data Transparency Messaging</strong></p><p class="desc">Not present in onboarding copy.</p></div><span class="status missing">Missing</span></div>
+    <div class="row"><span class="id">FR-SEC-05</span><div class="body"><p><strong>Account &amp; data deletion</strong></p><p class="desc">No deletion endpoint or UI path.</p></div><span class="status missing">Missing</span></div>
+  </section>
+
+  <!-- Structural gaps -->
+  <section>
+    <span class="section-num">Structural</span>
+    <h2 class="section-title">Bigger structural gaps</h2>
+    <p class="section-lede">Beyond the line-item misses, four shape-of-the-product issues stand out.</p>
+
+    <h3>1 · Platform — web prototype, not iOS app</h3>
+    <ul class="bullets">
+      <li>No Expo project. <code>package.json</code> lists <code>react</code>+<code>react-dom</code>+<code>vite</code>, not <code>expo</code> or <code>react-native</code>.</li>
+      <li>No iOS / Xcode project, no <code>app.json</code>, no <code>ios/</code> or <code>android/</code> directories.</li>
+      <li>No WidgetKit target, no App Group, no <code>widgetData.json</code> bridge.</li>
+      <li>No <code>expo-location</code>, <code>expo-notifications</code>, or background task setup.</li>
+    </ul>
+
+    <h3>2 · Engine isn't shared between client &amp; server</h3>
+    <ul class="bullets">
+      <li>FR-CARD-01 specifies a single <code>core/rewards.ts</code> imported by both. Today the logic lives only in <code>api/cards.js</code> + <code>api/recommendations.js</code> and the client always calls the API.</li>
+      <li>This blocks FR-ENG-05 (offline re-rank) and makes future TS migration harder.</li>
+    </ul>
+
+    <h3>3 · Pre-swipe layer is entirely absent</h3>
+    <ul class="bullets">
+      <li>No nearby-merchants endpoint. No geofence registration. No push delivery.</li>
+      <li>The app today is a reflective analytics tool. The FRD positions the <em>pre-swipe</em> moment as primary.</li>
+    </ul>
+
+    <h3>4 · Security model is prototype-grade</h3>
+    <ul class="bullets">
+      <li><code>x-user-id</code> header auth — anyone with a UUID is "logged in." No JWT, no signed sessions.</li>
+      <li>Plaid <code>access_token</code> stored in SQLite plaintext.</li>
+      <li>OTP code is hardcoded to <code>421906</code> in non-production.</li>
+      <li>All fine for sandbox / Replit demo; none of it is FR-SEC-compliant.</li>
+    </ul>
+  </section>
+
+  <!-- Recommended next steps -->
+  <section>
+    <span class="section-num">Next</span>
+    <h2 class="section-title">Recommended next steps</h2>
+
+    <h3>If staying on web for now</h3>
+    <ul class="bullets">
+      <li>Expand the category map from 7 → 15 (FR-TX-04). Many recos hide behind the "other" bucket today.</li>
+      <li>Build the timeline series + period toggle to validate FR-ENG-02 / FR-HOME-04.</li>
+      <li>Wire confidence (already in API) into the home reco rows — visible payoff for free.</li>
+      <li>Add the Durable Travel Credit hero on the credits screen — signature design moment.</li>
+      <li>Backfill 24 months in <code>/api/sync</code> using <code>/transactions/sync</code> + cursor.</li>
+    </ul>
+
+    <h3>To start the spec'd app</h3>
+    <ul class="bullets">
+      <li><code>npx create-expo-app</code> in a sibling repo. Port the React DOM screens to React Native one-by-one.</li>
+      <li>Lift <code>api/cards.js</code> + <code>api/recommendations.js</code> into <code>core/rewards.ts</code> (TS). Server imports from there.</li>
+      <li>Add <code>/merchants/near</code> using merchant inference + a geocode source. Without this, the entire pre-swipe layer is blocked.</li>
+      <li>Scaffold the WidgetKit target after Medium-A widget design is approved.</li>
+      <li>Replace <code>x-user-id</code> auth with a real JWT + refresh-token issuance on OTP verify.</li>
+    </ul>
+  </section>
+
+  <footer>Swipewise · Gap analysis · End of document</footer>
+
+</main>
+</body>
+</html>
