@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Screen } from '../../components/Screen';
 import { ChunkyBtn } from '../../components/Button';
@@ -24,6 +24,8 @@ const CATALOG: Card[] = [
 
 export default function OnboardManual() {
   const router = useRouter();
+  const { demo } = useLocalSearchParams<{ demo?: string }>();
+  const isDemo = demo === '1';
   const [picked, setPicked] = useState<Set<string>>(
     new Set(['amex_gold', 'csr', 'savor']),
   );
@@ -49,7 +51,7 @@ export default function OnboardManual() {
       JSON.stringify(Array.from(picked)),
     );
     await setStep('done');
-    router.replace('/home');
+    router.replace({ pathname: '/home', params: isDemo ? { demo: '1' } : {} });
   }
 
   return (

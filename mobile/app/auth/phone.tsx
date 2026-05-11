@@ -3,7 +3,7 @@
 // We default to +1 / US for v1 (en-US only, FRD §15).
 
 import { useMemo, useState } from 'react';
-import { View, Text, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, Alert, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen } from '../../components/Screen';
 import { ChunkyBtn } from '../../components/Button';
@@ -73,6 +73,24 @@ export default function AuthPhone() {
               By continuing, you agree to the Terms & Privacy.{'\n'}
               Standard message rates may apply.
             </Text>
+            <Pressable
+              hitSlop={8}
+              onPress={() =>
+                router.push({ pathname: '/auth/otp', params: { phone: '+14155550199', demo: '1' } })
+              }
+              style={{ marginTop: 10, alignSelf: 'center' }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: t.colors.plumDk,
+                  fontFamily: t.fonts.bodyBold,
+                  textDecorationLine: 'underline',
+                }}
+              >
+                Preview without verification →
+              </Text>
+            </Pressable>
           </>
         }
       >
@@ -157,7 +175,7 @@ export default function AuthPhone() {
             fontFamily: t.fonts.bodyRegular,
           }}
         >
-          🔒 We never share your number. Unsubscribe on first text if you change your mind.
+          We never share your number. Unsubscribe on first text if you change your mind.
         </Text>
 
         {/* Why no password card */}
