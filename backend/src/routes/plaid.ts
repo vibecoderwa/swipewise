@@ -93,8 +93,9 @@ router.post('/exchange', requireAuth, async (req, res) => {
   res.json({ item_id, institution: instName });
 });
 
-// GET /plaid/link-page  — serves an HTML shim that opens Plaid Link inside a WebView
-// Used by the mobile app via expo-web-browser openAuthSessionAsync.
+// GET /plaid/link-page  — serves an HTML shim that opens Plaid Link inside a WebView.
+// Renders any JS errors visibly on the page so we can see what fails in the
+// embedded WebView (where we don't have devtools access).
 router.get('/link-page', (req, res) => {
   const token = String(req.query.token ?? '');
   if (!token) return res.status(400).send('Missing token');
@@ -106,33 +107,72 @@ router.get('/link-page', (req, res) => {
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Connect your bank</title>
-  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
   <style>
     html,body{margin:0;padding:0;height:100%;background:#fafaf7;font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#1a1a1a}
-    .center{height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
+    .wrap{padding:24px;font-size:14px;line-height:1.5}
+    .step{margin:6px 0;color:#444}
+    .ok{color:#0a7a3a}
+    .err{color:#b00020;white-space:pre-wrap;word-break:break-all}
+    h2{margin:0 0 12px;font-size:16px}
   </style>
 </head>
 <body>
-  <div class="center"><div>Opening Plaid Link…</div></div>
+  <div class="wrap">
+    <h2>Connecting to Plaid…</h2>
+    <div id="log"></div>
+  </div>
   <script>
-    (function(){
-      function back(qs){ window.location.href = 'swipewise://plaid-callback?' + qs; }
+    var log = document.getElementById('log');
+    function step(msg, cls){
+      var div = document.createElement('div');
+      div.className = 'step' + (cls ? ' ' + cls : '');
+      div.textContent = msg;
+      log.appendChild(div);
+    }
+    function back(qs){
+      step('Redirecting to app: ' + qs);
+      window.location.href = 'swipewise://plaid-callback?' + qs;
+    }
+    window.onerror = function(message, source, lineno, colno, error){
+      step('JS error: ' + message + ' at ' + source + ':' + lineno, 'err');
+      return false;
+    };
+    step('Step 1 — Loading Plaid SDK from cdn.plaid.com…');
+    var script = document.createElement('script');
+    script.src = 'https://cdn.plaid.com/link/v2/stable/link-initialize.js';
+    script.onload = function(){
+      step('Step 2 — Plaid SDK loaded. typeof Plaid = ' + typeof window.Plaid, typeof window.Plaid === 'undefined' ? 'err' : 'ok');
+      if (typeof window.Plaid === 'undefined') {
+        step('Plaid global not defined after script load.', 'err');
+        return;
+      }
       try {
-        var handler = Plaid.create({
+        step('Step 3 — Calling Plaid.create…');
+        var handler = window.Plaid.create({
           token: ${tokenJson},
+          onLoad: function(){ step('Plaid.onLoad fired.', 'ok'); },
+          onEvent: function(eventName){ step('Plaid.onEvent: ' + eventName); },
           onSuccess: function(public_token){
             back('public_token=' + encodeURIComponent(public_token));
           },
           onExit: function(err){
-            if (err) back('error=' + encodeURIComponent(err.error_code || 'unknown'));
+            if (err) back('error=' + encodeURIComponent((err && (err.error_code || err.error_type)) || 'unknown'));
             else back('cancelled=1');
           },
         });
+        step('Step 4 — Plaid.create returned. Calling handler.open()…');
         handler.open();
+        step('Step 5 — handler.open() returned.', 'ok');
       } catch (e) {
+        step('Plaid.create/open threw: ' + (e && e.message || e), 'err');
         back('error=' + encodeURIComponent(String(e && e.message || e)));
       }
-    })();
+    };
+    script.onerror = function(){
+      step('FAILED to load Plaid SDK script. The CDN may be blocked from this WebView, or the page lacks network access.', 'err');
+      back('error=cdn_load_failed');
+    };
+    document.head.appendChild(script);
   </script>
 </body>
 </html>`);
