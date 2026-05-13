@@ -18,7 +18,11 @@ const PORT = parseInt(process.env.PORT ?? '3000');
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 
-app.use(helmet());
+// Helmet's default Content-Security-Policy blocks inline <script> and external
+// CDN scripts (cdn.plaid.com), which prevents the /plaid/link-page HTML shim
+// from running. The backend serves only one HTML page (the Plaid Link shim);
+// every other route returns JSON, where CSP is irrelevant. Disable CSP globally.
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS?.split(',') ?? '*',
   credentials: true,
