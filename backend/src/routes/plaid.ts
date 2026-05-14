@@ -27,37 +27,44 @@ const router = Router();
 
 // POST /plaid/link-token
 //
-// Creates a Plaid Hosted Link in addition to the link_token. Hosted Link
-// puts the whole Link flow on Plaid's domain, which means:
-//   - OAuth banks (Chase, BofA) work without an oauth_redirect_uri registered
-//     with Plaid + Universal Links wired up on our side
-//   - Plaid handles iframes, modal popups, redirects internally — no
-//     CSP / iframe-restriction issues
-//   - On completion, Plaid redirects to completion_redirect_uri with
-//     `public_token` (and `link_session_id`, etc.) as query params, which
-//     our react-native-webview Modal intercepts via
-//     onShouldStartLoadWithRequest.
-//
-// Returns both `link_token` (still useful for diagnostics) and
-// `hosted_link_url` (what the mobile WebView actually opens).
+// Tries to create a Plaid Hosted Link (hosts the whole flow on plaid.com,
+// solves OAuth banks like Chase). If Plaid rejects hosted_link (not all
+// accounts have it enabled), falls back to a plain link_token that the
+// mobile client opens via our in-house /plaid/link-page HTML shim — that
+// still covers non-OAuth sandbox banks.
 router.post('/link-token', requireAuth, async (req, res) => {
-  const response = await plaid.linkTokenCreate({
+  const baseParams = {
     user:          { client_user_id: req.userId },
     client_name:   'Swipewise',
     products:      [Products.Transactions],
     country_codes: [CountryCode.Us],
     language:      'en',
     webhook:       process.env.PLAID_WEBHOOK_URL,
-    hosted_link: {
-      url_lifetime_seconds:    14_400,
-      completion_redirect_uri: 'swipewise://plaid-callback',
-      is_mobile_app:           true,
-    },
-  } as Parameters<typeof plaid.linkTokenCreate>[0]);
+  };
 
+  try {
+    const response = await plaid.linkTokenCreate({
+      ...baseParams,
+      hosted_link: {
+        url_lifetime_seconds:    14_400,
+        completion_redirect_uri: 'swipewise://plaid-callback',
+        is_mobile_app:           true,
+      },
+    } as Parameters<typeof plaid.linkTokenCreate>[0]);
+    res.json({
+      link_token:      response.data.link_token,
+      hosted_link_url: (response.data as { hosted_link_url?: string }).hosted_link_url ?? null,
+    });
+    return;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[plaid] hosted_link failed, falling back to plain link_token: ${msg}`);
+  }
+
+  const fallback = await plaid.linkTokenCreate(baseParams);
   res.json({
-    link_token:      response.data.link_token,
-    hosted_link_url: (response.data as { hosted_link_url?: string }).hosted_link_url ?? null,
+    link_token:      fallback.data.link_token,
+    hosted_link_url: null,
   });
 });
 
