@@ -74,4 +74,31 @@ export const api = {
         expectedReward?: number;
       }>;
     }>(`/merchants/near?lat=${lat}&lng=${lng}&radius=${radius}`, { auth: true }),
+
+  getCards: () =>
+    request<
+      Array<{
+        id: 'gold' | 'csr' | 'savor';
+        name: string;
+        issuer: string;
+        currency: string;
+        pointsLabel: string;
+        isCashback?: boolean;
+        source: 'plaid' | 'manual';
+        annualFee: number;
+        cpp: number;
+      }>
+    >('/cards', { auth: true }),
+
+  getPlaidItems: () =>
+    request<
+      Array<{
+        id: string;
+        institution_name: string;
+        status: string;
+        error_code: string | null;
+        last_synced_at: string | null;
+        created_at: string;
+      }>
+    >('/plaid/items', { auth: true }),
 };
