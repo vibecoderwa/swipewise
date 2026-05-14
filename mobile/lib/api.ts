@@ -101,4 +101,32 @@ export const api = {
         created_at: string;
       }>
     >('/plaid/items', { auth: true }),
+
+  getSummary: (range: 'month' | 'quarter' | 'year') =>
+    request<{
+      summary: {
+        rows: Array<{
+          id: string;
+          name: string;
+          monthlySpend: number;
+          annualSpend: number;
+          winner: 'gold' | 'csr' | 'savor';
+          runnerUp: 'gold' | 'csr' | 'savor';
+          delta: number;
+          confidence: 'high' | 'medium' | 'low';
+          per: Record<'gold' | 'csr' | 'savor', { mult: number; pts: number; val: number }>;
+        }>;
+        totalSpendAnnual: number;
+        totalSpendMonthly: number;
+        cards: Record<
+          'gold' | 'csr' | 'savor',
+          { pts: number; rewards: number; credits: number; fee: number; net: number }
+        >;
+        ranking: Array<{ id: 'gold' | 'csr' | 'savor'; name: string; net: number }>;
+        optimizedRewards: number;
+        optimizedNet: number;
+        delta: number;
+      };
+      timeline: Array<{ month: number; label: string; [card: string]: number | string }>;
+    }>(`/transactions/summary?range=${range}`, { auth: true }),
 };
