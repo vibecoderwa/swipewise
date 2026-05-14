@@ -26,16 +26,39 @@ const plaid = new PlaidApi(plaidConfig);
 const router = Router();
 
 // POST /plaid/link-token
+//
+// Creates a Plaid Hosted Link in addition to the link_token. Hosted Link
+// puts the whole Link flow on Plaid's domain, which means:
+//   - OAuth banks (Chase, BofA) work without an oauth_redirect_uri registered
+//     with Plaid + Universal Links wired up on our side
+//   - Plaid handles iframes, modal popups, redirects internally — no
+//     CSP / iframe-restriction issues
+//   - On completion, Plaid redirects to completion_redirect_uri with
+//     `public_token` (and `link_session_id`, etc.) as query params, which
+//     our react-native-webview Modal intercepts via
+//     onShouldStartLoadWithRequest.
+//
+// Returns both `link_token` (still useful for diagnostics) and
+// `hosted_link_url` (what the mobile WebView actually opens).
 router.post('/link-token', requireAuth, async (req, res) => {
   const response = await plaid.linkTokenCreate({
-    user:         { client_user_id: req.userId },
-    client_name:  'Swipewise',
-    products:     [Products.Transactions],
-    country_codes:[CountryCode.Us],
-    language:     'en',
-    webhook:      process.env.PLAID_WEBHOOK_URL,
+    user:          { client_user_id: req.userId },
+    client_name:   'Swipewise',
+    products:      [Products.Transactions],
+    country_codes: [CountryCode.Us],
+    language:      'en',
+    webhook:       process.env.PLAID_WEBHOOK_URL,
+    hosted_link: {
+      url_lifetime_seconds:    14_400,
+      completion_redirect_uri: 'swipewise://plaid-callback',
+      is_mobile_app:           true,
+    },
+  } as Parameters<typeof plaid.linkTokenCreate>[0]);
+
+  res.json({
+    link_token:      response.data.link_token,
+    hosted_link_url: (response.data as { hosted_link_url?: string }).hosted_link_url ?? null,
   });
-  res.json({ link_token: response.data.link_token });
 });
 
 // POST /plaid/exchange  — called after Link completes

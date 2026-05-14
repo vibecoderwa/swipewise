@@ -49,11 +49,24 @@ export default function OnboardPlaid() {
     if (loading) return;
     setLoading(true);
     try {
-      const { link_token } = await authedJson<{ link_token: string }>(
-        '/plaid/link-token',
-        { method: 'POST', body: '{}' },
+      // Backend returns hosted_link_url whenever Plaid sandbox provisions it.
+      // Hosted Link runs the entire flow on plaid.com (handles OAuth banks
+      // like Chase / BofA without needing Universal Links on our side). On
+      // completion, Plaid redirects to swipewise://plaid-callback with a
+      // public_token query param — caught by onShouldStartLoadWithRequest.
+      //
+      // If hosted_link_url comes back null (older Plaid SDK or non-supporting
+      // env), fall back to the in-house /plaid/link-page HTML shim — works
+      // for non-OAuth sandbox banks only.
+      const tokenResp = await authedJson<{
+        link_token: string;
+        hosted_link_url: string | null;
+      }>('/plaid/link-token', { method: 'POST', body: '{}' });
+
+      setLinkUrl(
+        tokenResp.hosted_link_url ??
+          `${api.baseUrl}/plaid/link-page?token=${encodeURIComponent(tokenResp.link_token)}`,
       );
-      setLinkUrl(`${api.baseUrl}/plaid/link-page?token=${encodeURIComponent(link_token)}`);
     } catch (e) {
       Alert.alert("Couldn't connect", e instanceof Error ? e.message : 'Unknown error');
     } finally {
