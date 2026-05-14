@@ -488,8 +488,10 @@ function CardRanking({ summary, period }: { summary: Summary; period: Period }) 
 function CategoryBreakdown({ summary }: { summary: Summary }) {
   // Top categories by annualized spend, capped at 6. Spend amounts are intentionally
   // not surfaced as headline numbers (FR-VIS / "earned, not spent" voice).
+  // Filter out malformed rows (no winner or no entry in `per` for the winner) —
+  // this happens when the engine ran with zero owned cards.
   const top = [...summary.rows]
-    .filter((r) => r.annualSpend > 0)
+    .filter((r) => r.annualSpend > 0 && r.winner && r.per && r.per[r.winner])
     .sort((a, b) => b.annualSpend - a.annualSpend)
     .slice(0, 6);
 
@@ -500,7 +502,7 @@ function CategoryBreakdown({ summary }: { summary: Summary }) {
       <SectionLabel>Best card by category</SectionLabel>
       <View style={{ marginTop: 10 }}>
         {top.map((row, idx) => {
-          const mult = row.per[row.winner].mult;
+          const mult = row.per[row.winner]?.mult ?? 1;
           return (
             <View
               key={row.id}

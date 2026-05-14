@@ -65,7 +65,12 @@ router.get('/summary', requireAuth, async (req, res) => {
 
   const cpp     = settingsResult.rows[0]?.cpp  ?? DEFAULT_CPP;
   const fees    = settingsResult.rows[0]?.fees ?? DEFAULT_FEES;
-  const owned   = cardsResult.rows.map(r => r.card_id);
+  // If the user has no matched cards yet (e.g. sandbox accounts didn't map to
+  // any v1 card product), pass `undefined` so computeAll falls back to all
+  // supported cards. Otherwise downstream consumers see rows with `winner`
+  // undefined and a `per` map with no entries.
+  const ownedRows = cardsResult.rows.map(r => r.card_id);
+  const owned     = ownedRows.length > 0 ? ownedRows : undefined;
 
   // Aggregate monthly spend per category
   const spend = Object.fromEntries(CATEGORIES.map(c => [c.id, 0])) as Record<CategoryId, number>;
