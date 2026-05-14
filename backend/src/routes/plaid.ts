@@ -51,9 +51,11 @@ router.post('/link-token', requireAuth, async (req, res) => {
         is_mobile_app:           true,
       },
     } as Parameters<typeof plaid.linkTokenCreate>[0]);
+    const hostedUrl = (response.data as { hosted_link_url?: string }).hosted_link_url ?? null;
+    console.log(`[plaid] link-token (hosted_link)  user=${req.userId}  hosted_link_url=${hostedUrl ? 'YES' : 'null'}`);
     res.json({
       link_token:      response.data.link_token,
-      hosted_link_url: (response.data as { hosted_link_url?: string }).hosted_link_url ?? null,
+      hosted_link_url: hostedUrl,
     });
     return;
   } catch (err) {
@@ -62,6 +64,7 @@ router.post('/link-token', requireAuth, async (req, res) => {
   }
 
   const fallback = await plaid.linkTokenCreate(baseParams);
+  console.log(`[plaid] link-token (fallback)  user=${req.userId}`);
   res.json({
     link_token:      fallback.data.link_token,
     hosted_link_url: null,

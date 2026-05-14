@@ -347,6 +347,25 @@ export default function OnboardPlaid() {
                 }
                 return true;
               }}
+              onNavigationStateChange={(nav) => {
+                // Belt-and-suspenders: Plaid's Hosted Link sometimes shows a
+                // "Continue to {app}" page that fails to auto-redirect to the
+                // custom scheme inside an embedded WebView. The completion URL
+                // itself contains public_token / oauth_state_id query params
+                // before the redirect attempts. If we see one, treat the
+                // navigation as the callback and short-circuit.
+                if (!nav.url) return;
+                if (nav.url.startsWith(RETURN_URL)) {
+                  handleCallback(nav.url);
+                  return;
+                }
+                const hasToken =
+                  nav.url.includes('public_token=') ||
+                  nav.url.includes('plaid-callback');
+                if (hasToken) {
+                  handleCallback(nav.url);
+                }
+              }}
               startInLoadingState
               renderLoading={() => (
                 <View
