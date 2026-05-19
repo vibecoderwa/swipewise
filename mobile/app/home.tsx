@@ -209,6 +209,7 @@ export default function Home() {
               <OptimizationHero summary={summary} period={period} />
               <CardRanking summary={summary} period={period} />
               <CategoryBreakdown summary={summary} />
+              <CreditsLink onPress={() => router.push('/credits')} />
             </>
           ) : (
             <SmallCard tone="dim">
@@ -548,6 +549,42 @@ function ConfidenceDots({ level }: { level: 'high' | 'medium' | 'low' }) {
         />
       ))}
     </View>
+  );
+}
+
+function CreditsLink({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{
+        marginTop: 26,
+        padding: 14,
+        backgroundColor: t.colors.paper,
+        borderColor: t.colors.ink,
+        borderWidth: 1.5,
+        borderRadius: t.radii.lg,
+        ...t.shadow.chunky,
+        flexDirection: 'row',
+        alignItems: 'center',
+      }}
+    >
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: t.fonts.bodyExtraBold, fontSize: 15, color: t.colors.ink }}>
+          View all credits
+        </Text>
+        <Text
+          style={{
+            fontSize: 12,
+            color: t.colors.dim,
+            marginTop: 2,
+            fontFamily: t.fonts.bodyRegular,
+          }}
+        >
+          Per-card breakdown · CSR $300 travel hero
+        </Text>
+      </View>
+      <Text style={{ fontSize: 20, fontFamily: t.fonts.bodyBold, color: t.colors.ink }}>›</Text>
+    </Pressable>
   );
 }
 

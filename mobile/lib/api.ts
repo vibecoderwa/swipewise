@@ -129,4 +129,33 @@ export const api = {
       };
       timeline: Array<{ month: number; label: string; [card: string]: number | string }>;
     }>(`/transactions/summary?range=${range}`, { auth: true }),
+
+  getCredits: () =>
+    request<
+      Array<{
+        cardId: 'gold' | 'csr' | 'savor';
+        cardName: string;
+        credits: Array<{
+          id: string;
+          name: string;
+          annual: number;
+          cadence: string;
+          note?: string;
+          durable?: boolean;
+          captured: boolean;
+        }>;
+        totalPotential: number;
+        totalCaptured: number;
+      }>
+    >('/credits', { auth: true }),
+
+  setCreditCaptured: (cardId: string, creditId: string, captured: boolean) =>
+    request<{ cardId: string; creditId: string; captured: boolean }>(
+      `/credits/${cardId}/${creditId}`,
+      {
+        method: 'PATCH',
+        auth: true,
+        body: JSON.stringify({ captured }),
+      },
+    ),
 };
